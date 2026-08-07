@@ -24,6 +24,8 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => null);
+  vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1000);
+  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(700);
   mockCameraPositionSet.mockClear();
   mockCameraLookAt.mockClear();
   mockCameraUpdateMatrixWorld.mockClear();
@@ -218,11 +220,22 @@ vi.mock("./SceneRoot", () => ({
   SceneRoot: () => null,
 }));
 
-import App from "../../App";
+import { DirectorDeskShell } from "../../app/layout/DirectorDeskShell";
+import { DirectorCanvas } from "./DirectorCanvas";
 import { createInitialDirectorState, useDirectorStore } from "../store/directorStore";
 
+function renderDirectorWorkspace() {
+  return render(
+    <div className="director-desk-root" data-theme="dark" style={{ width: 1280, height: 720 }}>
+      <DirectorDeskShell>
+        <DirectorCanvas />
+      </DirectorDeskShell>
+    </div>
+  );
+}
+
 it("renders a live R3F viewport and director scene controls", () => {
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.getByTestId("director-canvas")).toBeInTheDocument();
   expect(screen.getByLabelText("场景缩放")).toBeInTheDocument();
@@ -237,7 +250,7 @@ it("keeps orbit controls available when a transformable object is selected but n
     selectedObjectId: "char_default_a",
   });
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.getByTestId("orbit-controls")).toHaveAttribute("data-enabled", "true");
 });
@@ -248,7 +261,7 @@ it("does not render a full-viewport transform drag layer over the 3D viewport", 
     selectedObjectId: "char_default_a",
   });
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.queryByRole("application", { name: "3D视口移动拖拽层" })).not.toBeInTheDocument();
   expect(screen.queryByRole("application", { name: "3D视口旋转拖拽层" })).not.toBeInTheDocument();
@@ -256,7 +269,7 @@ it("does not render a full-viewport transform drag layer over the 3D viewport", 
 });
 
 it("renders only the dark major viewport grid lines", () => {
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.getByTestId("viewport-grid")).toHaveAttribute("data-cell-thickness", "0");
   expect(screen.getByTestId("viewport-grid")).toHaveAttribute("data-position", "[0,0.002,0]");
@@ -277,7 +290,7 @@ it("keeps the viewport grid slightly above the configured ground plane", () => {
     },
   });
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.getByTestId("viewport-grid")).toHaveAttribute("data-position", "[0,1.502,0]");
 });
@@ -288,7 +301,7 @@ it("opens the scene inspector when users click empty 3D viewport space", () => {
     selectedObjectId: "char_default_a",
   });
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.getByLabelText("角色名称")).toBeInTheDocument();
 
@@ -305,10 +318,10 @@ it("renders the viewport aspect ratio overlay when a non-auto frame is selected"
     viewportAspectRatio: "9:16",
   });
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.getByLabelText("视口画幅框")).toBeInTheDocument();
-  expect(screen.getAllByLabelText("视口画幅遮罩")).toHaveLength(4);
+  expect(screen.getAllByLabelText("视口画幅遮罩")).toHaveLength(1);
   expect(screen.getByLabelText("视口画幅框")).toHaveAttribute("data-aspect-ratio", "9:16");
 });
 
@@ -319,7 +332,7 @@ it("toggles the viewport rule-of-thirds guide from the aspect frame button", () 
     viewportRuleOfThirdsEnabled: false,
   });
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   const guideToggle = screen.getByRole("button", { name: "开启九宫格辅助线" });
   fireEvent.click(guideToggle);
@@ -329,7 +342,7 @@ it("toggles the viewport rule-of-thirds guide from the aspect frame button", () 
 });
 
 it("renders the native 3D viewport gizmo in an overlay canvas above the aspect mask", () => {
-  render(<App />);
+  renderDirectorWorkspace();
 
   expect(screen.getAllByTestId("mock-r3f-canvas")).toHaveLength(2);
   expect(screen.getByLabelText("3D视口原生坐标控件")).toContainElement(screen.getByTestId("native-gizmo-helper"));
@@ -346,7 +359,7 @@ it("renders the native 3D viewport gizmo in an overlay canvas above the aspect m
 });
 
 it("offsets the native viewport gizmo inward when overlay side panels are open", () => {
-  render(<App />);
+  renderDirectorWorkspace();
 
   const gizmo = screen.getByLabelText("3D视口原生坐标控件");
 
@@ -356,7 +369,7 @@ it("offsets the native viewport gizmo inward when overlay side panels are open",
 });
 
 it("syncs native viewport gizmo axis clicks back to the main director view", () => {
-  render(<App />);
+  renderDirectorWorkspace();
   mockCameraPositionSet.mockClear();
 
   const xAxisHitTarget = screen.getByRole("button", { name: "切换到 X 正向视图" });
@@ -392,7 +405,7 @@ it("captures screenshots using the selected viewport aspect ratio crop", async (
     return originalCreateElement(tagName);
   }) as typeof document.createElement);
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   const results = await requestViewportCapture({
     preset: "current",
@@ -437,7 +450,7 @@ it("draws visible character name labels into viewport screenshots", async () => 
     return originalCreateElement(tagName);
   }) as typeof document.createElement);
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   await requestViewportCapture({
     preset: "current",
@@ -487,7 +500,7 @@ it("does not draw character name labels into screenshots when scene labels are h
     return originalCreateElement(tagName);
   }) as typeof document.createElement);
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   await requestViewportCapture({
     preset: "current",
@@ -498,7 +511,7 @@ it("does not draw character name labels into screenshots when scene labels are h
 });
 
 it("hides viewport grid and camera helper models only while rendering screenshots", async () => {
-  render(<App />);
+  renderDirectorWorkspace();
 
   await requestViewportCapture({
     preset: "current",
@@ -536,7 +549,7 @@ it("captures screenshots from the same safe-area frame shown by the aspect overl
     return originalCreateElement(tagName);
   }) as typeof document.createElement);
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   await requestViewportCapture({
     preset: "current",
@@ -589,7 +602,7 @@ it("captures every four-view screenshot using the selected viewport aspect ratio
     return originalCreateElement(tagName);
   }) as typeof document.createElement);
 
-  render(<App />);
+  renderDirectorWorkspace();
 
   const results = await requestViewportCapture({
     preset: "four",

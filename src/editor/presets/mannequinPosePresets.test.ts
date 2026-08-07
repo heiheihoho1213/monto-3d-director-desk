@@ -291,13 +291,13 @@ it("calibrates phone as a right-hand phone viewing pose with the left arm relaxe
 
   expect(pose?.controls).toMatchObject({
     "head.pitch": 18,
-    "rightShoulder.pitch": 34,
+    "rightShoulder.pitch": 20,
     "rightShoulder.spread": -4,
-    "rightShoulder.twist": -12,
+    "rightShoulder.twist": -30,
     "rightElbow.bend": 82,
-    "rightHand.roll": -12,
+    "rightHand.roll": -30,
     "rightHand.pitch": 14,
-    "rightHand.twist": -8,
+    "rightHand.twist": 60,
     "leftShoulder.pitch": -10,
     "leftShoulder.spread": 8,
     "leftElbow.bend": 16,

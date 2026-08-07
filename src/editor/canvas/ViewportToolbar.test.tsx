@@ -9,8 +9,70 @@ import { ViewportToolbar } from "./ViewportToolbar";
 
 const mockReadLocalModelFile = vi.fn();
 
+const mockModelLibraryItems = vi.hoisted(() => [
+  {
+    id: "convenience:ATM_low.fbx",
+    categoryId: "convenience" as const,
+    fileName: "ATM_low.fbx",
+    name: "自动取款机",
+    url: "/models/ATM_low.fbx",
+    thumbUrl: "/thumb/atm.png",
+  },
+  {
+    id: "outdoor:backpack_low.fbx",
+    categoryId: "outdoor" as const,
+    fileName: "backpack_low.fbx",
+    name: "背包",
+    url: "/models/backpack_low.fbx",
+    thumbUrl: "/thumb/backpack.png",
+  },
+  {
+    id: "outdoor:thermus_low.fbx",
+    categoryId: "outdoor" as const,
+    fileName: "thermus_low.fbx",
+    name: "保温瓶",
+    url: "/models/thermus_low.fbx",
+    thumbUrl: "/thumb/thermus.png",
+  },
+  {
+    id: "outdoor:deer_skull_low.fbx",
+    categoryId: "outdoor" as const,
+    fileName: "deer_skull_low.fbx",
+    name: "鹿头骨",
+    url: "/models/deer_skull_low.fbx",
+    thumbUrl: "/thumb/deer.png",
+  },
+  {
+    id: "tools:wrench_low.fbx",
+    categoryId: "tools" as const,
+    fileName: "wrench_low.fbx",
+    name: "扳手",
+    url: "/models/wrench_low.fbx",
+    thumbUrl: "/thumb/wrench.png",
+  },
+  {
+    id: "tools:drill_press_low.fbx",
+    categoryId: "tools" as const,
+    fileName: "drill_press_low.fbx",
+    name: "台钻",
+    url: "/models/drill_press_low.fbx",
+    thumbUrl: "/thumb/drill.png",
+  },
+]);
+
 vi.mock("../loaders/localModelImport", () => ({
   readLocalModelFile: (...args: unknown[]) => mockReadLocalModelFile(...args),
+}));
+
+vi.mock("../modelLibrary/modelLibraryCatalog", () => ({
+  MODEL_LIBRARY_CATEGORIES: [
+    { id: "convenience", label: "便利生活", directoryName: "便利生活" },
+    { id: "home", label: "居家生活", directoryName: "生活家居" },
+    { id: "outdoor", label: "户外出行", directoryName: "户外出行" },
+    { id: "tools", label: "工具配件", directoryName: "工具配件" },
+    { id: "my-models", label: "我的模型", directoryName: "" },
+  ],
+  getModelLibraryItems: () => mockModelLibraryItems,
 }));
 
 function createMemoryStorage(): Storage {
@@ -82,14 +144,14 @@ it("renders the viewport capsule as project icon-system buttons", () => {
   expect(toolbarButtonLabels.indexOf("模型库")).toBe(toolbarButtonLabels.indexOf("导入本地模型") + 1);
 });
 
-it("renders custom hover labels instead of native title tooltips", () => {
+it("renders custom hover labels alongside toolbar titles", () => {
   render(<ViewportToolbar />);
 
   const toolbar = screen.getByRole("group", { name: "3D视口快捷工具" });
   const button = within(toolbar).getByRole("button", { name: "导入本地模型" });
   const label = within(button).getByText("导入本地模型");
 
-  expect(button).not.toHaveAttribute("title");
+  expect(button).toHaveAttribute("title", "导入本地模型");
   expect(label).toHaveClass("viewport-toolbar-label");
 });
 

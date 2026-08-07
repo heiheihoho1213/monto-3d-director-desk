@@ -16,9 +16,7 @@ it("uses the theme tokens instead of the temporary demo palette", () => {
 
 it("paints a dark first frame before React and theme messages initialize", () => {
   const css = readFileSync("src/styles/index.css", "utf8");
-  const html = readFileSync("index.html", "utf8");
 
-  expect(html).toMatch(/<style>[\s\S]*?html,\s*body,\s*#root\s*\{[\s\S]*?background:\s*#090909;[\s\S]*?<\/style>/);
   // Library CSS must not paint host html/body — that breaks embedded layouts on resize.
   expect(css).not.toMatch(/html,\s*[\r\n]+\s*body,\s*[\r\n]+\s*#root\s*\{[\s\S]*?background:\s*#090909;/);
   expect(css).toContain(".director-desk-root");

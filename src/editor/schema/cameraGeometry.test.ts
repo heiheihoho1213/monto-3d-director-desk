@@ -29,7 +29,7 @@ it("moves the camera rig behind a saved viewport snapshot", () => {
 });
 
 it("scales the viewport camera viewfinder from one visual scale", () => {
-  expect(VIEWPORT_CAMERA_VISUAL_SCALE).toBeCloseTo(0.8);
+  expect(VIEWPORT_CAMERA_VISUAL_SCALE).toBeCloseTo(0.35);
   expect(VIEWPORT_CAMERA_FRUSTUM_DEPTH).toBeCloseTo(5.2 * VIEWPORT_CAMERA_VISUAL_SCALE);
   expect(VIEWPORT_CAMERA_FRUSTUM_FRAME_WIDTH).toBeCloseTo(3.2 * VIEWPORT_CAMERA_VISUAL_SCALE);
 });

@@ -1,8 +1,17 @@
 {
   "name": "monto-3d-director-desk",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A browser-based 3D director desk React component built with Vite, Three.js, and React Three Fiber.",
   "license": "MIT",
+  "author": "heiheihoho1213 <heng.du@ucloud.cn>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heiheihoho1213/monto-3d-director-desk.git"
+  },
+  "homepage": "https://heiheihoho1213.github.io/monto-3d-director-desk/",
+  "bugs": {
+    "url": "https://github.com/heiheihoho1213/monto-3d-director-desk/issues"
+  },
   "type": "module",
   "keywords": [
     "3d",
@@ -35,6 +44,7 @@
     "dev": "pnpm build && pnpm --dir docs dev",
     "build": "vite build && tsc -p tsconfig.lib.json --emitDeclarationOnly",
     "build:docs": "pnpm build && pnpm --dir docs build",
+    "prepublishOnly": "pnpm test && pnpm build",
     "test": "vitest run"
   },
   "peerDependencies": {

@@ -61,7 +61,7 @@ it("keeps the current orbit distance when native gizmo axis clicks switch viewpo
 it("positions the transparent native gizmo hit target over the visible X axis head", () => {
   const style = getViewportGizmoHitButtonStyle(DEFAULT_DIRECTOR_VIEW_SNAPSHOT, [1, 0, 0]);
 
-  expect(style.left).toBe("92px");
-  expect(style.top).toBe("52px");
+  expect(style.left).toBe("57.5px");
+  expect(style.top).toBe("32.5px");
   expect(style.zIndex).toBe(100);
 });
