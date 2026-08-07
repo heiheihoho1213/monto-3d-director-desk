@@ -1,0 +1,69 @@
+{
+  "name": "monto-3d-director-desk",
+  "version": "1.0.0",
+  "description": "A browser-based 3D director desk React component built with Vite, Three.js, and React Three Fiber.",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "3d",
+    "director",
+    "threejs",
+    "react-three-fiber",
+    "vite",
+    "storyboard",
+    "react-component"
+  ],
+  "main": "./dist/monto-3d-director-desk.js",
+  "module": "./dist/monto-3d-director-desk.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/monto-3d-director-desk.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "dev": "pnpm build && pnpm --dir docs dev",
+    "build": "vite build && tsc -p tsconfig.lib.json --emitDeclarationOnly",
+    "build:docs": "pnpm build && pnpm --dir docs build",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.17.14",
+    "camera-controls": "^2.9.0",
+    "lucide-react": "^0.469.0",
+    "three": "~0.182.0",
+    "three-stdlib": "^2.36.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.61.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/three": "~0.182.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "jsdom": "^29.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "~5.7.3",
+    "vite": "^6.1.0",
+    "vitest": "^4.1.2"
+  }
+}

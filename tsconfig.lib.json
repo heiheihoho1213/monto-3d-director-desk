@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/index.ts",
+    "src/DirectorDesk.tsx",
+    "src/vite-env.d.ts",
+    "src/app/**/*.ts",
+    "src/app/**/*.tsx",
+    "src/editor/**/*.ts",
+    "src/editor/**/*.tsx",
+    "src/styles/**/*.css"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/test/**"
+  ]
+}

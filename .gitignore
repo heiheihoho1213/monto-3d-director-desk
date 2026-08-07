@@ -1,0 +1,12 @@
+node_modules
+dist
+docs/dist
+docs/node_modules
+.DS_Store
+.vercel
+coverage
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+.vscode
+.pnpm-store
