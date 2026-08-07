@@ -26,7 +26,7 @@
 
 ## 技术栈
 
-- React 18
+- React 19
 - Vite 6
 - TypeScript
 - Three.js
@@ -57,7 +57,7 @@ dist                   # Vite lib 构建产物（发布用）
 
 ## 作为组件使用
 
-Peer dependencies：仅需 `react`、`react-dom`。`three`、`@react-three/fiber`、`@react-three/drei` 等由本包装配为 dependencies，随安装自动带上。
+Peer dependencies：仅需 `react` / `react-dom` **^19**。`three`、`@react-three/fiber@9`、`@react-three/drei@10` 等由本包装配为 dependencies，随安装自动带上。
 
 ```bash
 npm install monto-3d-director-desk

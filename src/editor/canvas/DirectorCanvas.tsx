@@ -1,4 +1,4 @@
-import { GizmoHelper, GizmoViewport, Grid, OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { GizmoHelper, GizmoViewport, Grid, OrbitControls, PerspectiveCamera, type OrbitControlsChangeEvent } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import {
   Suspense,
@@ -480,10 +480,12 @@ function CanvasCaptureBridge({
 
 function DirectorViewCameraSync({
   controlsRef,
+  skipNextSyncRef,
   snapshot,
   viewMode,
 }: {
   controlsRef: MutableRefObject<OrbitControlsImpl | null>;
+  skipNextSyncRef: MutableRefObject<boolean>;
   snapshot: CameraShotSnapshot;
   viewMode: "director" | "camera";
 }) {
@@ -492,6 +494,13 @@ function DirectorViewCameraSync({
   useLayoutEffect(() => {
     if (viewMode !== "director") return;
 
+    // OrbitControls already owns the camera while damping / orbiting.
+    // Re-applying the React snapshot here fights damping and causes viewport jitter (worse under R3F v9 StrictMode).
+    if (skipNextSyncRef.current) {
+      skipNextSyncRef.current = false;
+      return;
+    }
+
     const perspectiveCamera = camera as ThreePerspectiveCamera;
     applySnapshotToCamera(perspectiveCamera, snapshot);
 
@@ -499,7 +508,7 @@ function DirectorViewCameraSync({
       controlsRef.current.target.set(...snapshot.target);
       controlsRef.current.update();
     }
-  }, [camera, controlsRef, snapshot, viewMode]);
+  }, [camera, controlsRef, skipNextSyncRef, snapshot, viewMode]);
 
   return null;
 }
@@ -595,6 +604,8 @@ export function DirectorCanvas() {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const viewportCameraSnapshotRef = useRef<CameraShotSnapshot>(DEFAULT_DIRECTOR_VIEW_SNAPSHOT);
+  const skipNextCameraSyncRef = useRef(false);
+  const orbitSnapshotCommitTimerRef = useRef(0);
   const [directorViewSnapshot, setDirectorViewSnapshot] = useState(DEFAULT_DIRECTOR_VIEW_SNAPSHOT);
   const [toolbarHeight, setToolbarHeight] = useState(DEFAULT_VIEWPORT_TOOLBAR_HEIGHT);
   const hasPanorama = Boolean(panoramaAssetId);
@@ -647,20 +658,56 @@ export function DirectorCanvas() {
 
   useEffect(() => {
     setViewportCameraSnapshotProvider(getViewportCameraSnapshot);
-    return () => setViewportCameraSnapshotProvider(null);
+    return () => {
+      setViewportCameraSnapshotProvider(null);
+      window.clearTimeout(orbitSnapshotCommitTimerRef.current);
+    };
   }, []);
 
-  function updateDirectorViewSnapshot(snapshot: CameraShotSnapshot) {
+  function updateDirectorViewSnapshot(snapshot: CameraShotSnapshot, options?: { fromOrbitControls?: boolean }) {
     viewportCameraSnapshotRef.current = snapshot;
-    setDirectorViewSnapshot((currentSnapshot) =>
-      areCameraSnapshotsClose(currentSnapshot, snapshot) ? currentSnapshot : snapshot
-    );
+    setDirectorViewSnapshot((currentSnapshot) => {
+      if (areCameraSnapshotsClose(currentSnapshot, snapshot)) {
+        return currentSnapshot;
+      }
+      if (options?.fromOrbitControls) {
+        skipNextCameraSyncRef.current = true;
+      }
+      return snapshot;
+    });
   }
+
+  /** Orbit damping fires every frame — keep React out of that path; commit after motion settles. */
+  const handleOrbitControlsChange = useCallback((event?: OrbitControlsChangeEvent) => {
+    const controls = event?.target as OrbitControlsImpl | undefined;
+    const perspectiveCamera = controls?.object as ThreePerspectiveCamera | undefined;
+    const target = controls?.target;
+    if (!perspectiveCamera || !target) return;
+
+    viewportCameraSnapshotRef.current = {
+      fov: perspectiveCamera.fov,
+      position: [perspectiveCamera.position.x, perspectiveCamera.position.y, perspectiveCamera.position.z],
+      target: [target.x, target.y, target.z],
+    };
+
+    window.clearTimeout(orbitSnapshotCommitTimerRef.current);
+    orbitSnapshotCommitTimerRef.current = window.setTimeout(() => {
+      const snapshot = viewportCameraSnapshotRef.current;
+      setDirectorViewSnapshot((currentSnapshot) => {
+        if (areCameraSnapshotsClose(currentSnapshot, snapshot)) {
+          return currentSnapshot;
+        }
+        skipNextCameraSyncRef.current = true;
+        return snapshot;
+      });
+    }, 120);
+  }, []);
 
   function updateViewportGizmoSnapshot(snapshot: CameraShotSnapshot) {
     if (viewMode !== "director") {
       setViewMode("director");
     }
+    window.clearTimeout(orbitSnapshotCommitTimerRef.current);
     updateDirectorViewSnapshot(snapshot);
   }
 
@@ -707,23 +754,18 @@ export function DirectorCanvas() {
           {viewMode === "director" ? (
             <OrbitControls
               ref={controlsRef}
-              enableDamping
+              enableDamping={false}
               enabled
               makeDefault
-              target={DEFAULT_DIRECTOR_VIEW_SNAPSHOT.target}
-              onChange={(event) => {
-                const perspectiveCamera = event?.target?.object as ThreePerspectiveCamera | undefined;
-                const target = event?.target?.target as Vector3 | undefined;
-                if (!perspectiveCamera || !target) return;
-                updateDirectorViewSnapshot({
-                  fov: perspectiveCamera.fov,
-                  position: [perspectiveCamera.position.x, perspectiveCamera.position.y, perspectiveCamera.position.z],
-                  target: [target.x, target.y, target.z],
-                });
-              }}
+              onChange={handleOrbitControlsChange}
             />
           ) : null}
-          <DirectorViewCameraSync controlsRef={controlsRef} snapshot={directorViewSnapshot} viewMode={viewMode} />
+          <DirectorViewCameraSync
+            controlsRef={controlsRef}
+            skipNextSyncRef={skipNextCameraSyncRef}
+            snapshot={directorViewSnapshot}
+            viewMode={viewMode}
+          />
           {viewMode === "camera" && activeCameraView ? (
             <PerspectiveCamera
               fov={activeCameraView.fov}

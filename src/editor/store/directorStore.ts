@@ -526,9 +526,14 @@ export function createInitialDirectorState(options: DirectorStateOptions = {}): 
     return persistedState;
   }
 
+  const project = createDefaultDirectorProject({ includePersistedLocalAssets: options.includePersistedLocalAssets });
+  const firstCharacterId = project.objects.find((item) => item.kind === "character")?.id ?? null;
+
   return {
     ...DEFAULT_UI_STATE,
-    project: createDefaultDirectorProject({ includePersistedLocalAssets: options.includePersistedLocalAssets }),
+    selectedObjectId: firstCharacterId,
+    selectedObjectIds: firstCharacterId ? [firstCharacterId] : [],
+    project,
   };
 }
 
@@ -2059,14 +2064,18 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
       writePersistedDirectorState(snapshot);
     },
     replaceProject: (project) =>
-      commitMutation((state) => ({
-        ...state,
-        project: cloneJsonValue(project),
-        selectedObjectId: null,
-        selectedObjectIds: [],
-        selectedCrowdId: null,
-        directorInspectorMode: "auto",
-      })),
+      commitMutation((state) => {
+        const firstCharacterId = project.objects.find((item) => item.kind === "character")?.id ?? null;
+
+        return {
+          ...state,
+          project: cloneJsonValue(project),
+          selectedObjectId: firstCharacterId,
+          selectedObjectIds: firstCharacterId ? [firstCharacterId] : [],
+          selectedCrowdId: null,
+          directorInspectorMode: "auto",
+        };
+      }),
     saveLatestSnapshot: () => {
       writePersistedDirectorState(extractPersistedDirectorState(get() as DirectorRuntimeState));
     },

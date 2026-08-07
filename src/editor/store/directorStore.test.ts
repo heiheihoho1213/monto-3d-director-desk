@@ -55,6 +55,8 @@ it("seeds the demo with one mannequin role and one camera", () => {
   expect(state.project.cameras[0]?.name).toBe("机位01");
   expect(state.project.objects.some((item) => item.kind === "character")).toBe(true);
   expect(state.project.cameras).toHaveLength(1);
+  expect(state.selectedObjectId).toBe(defaultCharacter?.id ?? null);
+  expect(state.selectedObjectIds).toEqual(defaultCharacter ? [defaultCharacter.id] : []);
 });
 
 it("updates the viewport aspect ratio selection in ui state", () => {
@@ -127,7 +129,7 @@ it("routes the right panel by object type and view mode", () => {
     },
   };
 
-  expect(selectRightPanelKind(state)).toBe("scene");
+  expect(selectRightPanelKind({ ...state, selectedObjectId: null, selectedObjectIds: [] })).toBe("scene");
   expect(selectRightPanelKind({ ...state, selectedObjectId: characterId })).toBe("character");
   expect(selectRightPanelKind({ ...state, selectedObjectId: cameraObjectId })).toBe("camera");
   expect(selectRightPanelKind(propState)).toBe("prop");

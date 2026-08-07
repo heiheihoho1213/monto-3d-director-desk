@@ -11,6 +11,12 @@ beforeEach(() => {
 });
 
 it("shows the scene panel in director mode when nothing is selected", () => {
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    selectedObjectId: null,
+    selectedObjectIds: [],
+  });
+
   render(<RightPanel />);
 
   expect(screen.getByText("3D场景")).toBeInTheDocument();
