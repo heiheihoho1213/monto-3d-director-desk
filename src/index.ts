@@ -4,7 +4,28 @@ export type {
   DirectorDeskMaterial,
   DirectorDeskProps,
   DirectorDeskTheme,
+  DirectorDeskCapturePreset,
+  DirectorDeskCaptureRequestOptions,
+  DirectorDeskHandle,
+  DirectorDeskScreenshot,
+  DirectorDeskImageDataUrl,
 } from "./DirectorDesk";
+
+export {
+  captureCurrentView,
+  captureFourDirections,
+  captureTwelveDirections,
+  captureCameraShot,
+  captureFromViewportToolbar,
+  sendDirectorDeskCaptures,
+  mapScreenshotResults,
+} from "./editor/io/directorDeskCaptureApi";
+
+export { requestViewportCapture } from "./editor/io/captureBridge";
+export type { ViewportCapturePreset, ViewportCaptureRequest } from "./editor/io/captureBridge";
+
+export { buildCaptureFileName, downloadCaptureResults } from "./editor/io/screenshotExport";
+export type { ScreenshotDataUrl, ScreenshotMeta, ScreenshotResult } from "./editor/io/screenshotExport";
 
 export type {
   DirectorProject,

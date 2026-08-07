@@ -9,8 +9,9 @@
   --text-rgb: 0 0 0;
   --text-muted-rgb: 102 102 102;
   --text-dim-rgb: 148 148 148;
-  --accent-rgb: 3 150 255;
-  --accent-hover-rgb: 37 99 235;
+  --accent-rgb: 44 44 44;
+  --accent-hover-rgb: 36 36 36;
+  --accent-contrast-rgb: 255 255 255;
   --overlay-rgb: 15 23 42;
   --ui-shadow-panel: 0 14px 34px rgba(15, 23, 42, 0.18);
   --left-sidebar-width: 220px;
@@ -40,8 +41,9 @@
   --text-rgb: 255 255 255;
   --text-muted-rgb: 136 136 136;
   --text-dim-rgb: 95 95 95;
-  --accent-rgb: 3 150 255;
-  --accent-hover-rgb: 96 165 250;
+  --accent-rgb: 205 240 81;
+  --accent-hover-rgb: 184 228 65;
+  --accent-contrast-rgb: 9 9 9;
   --overlay-rgb: 0 0 0;
   --ui-shadow-panel: 0 14px 34px rgba(0, 0, 0, 0.38);
 }
@@ -57,8 +59,9 @@
   --text-rgb: 0 0 0;
   --text-muted-rgb: 102 102 102;
   --text-dim-rgb: 148 148 148;
-  --accent-rgb: 3 150 255;
-  --accent-hover-rgb: 37 99 235;
+  --accent-rgb: 44 44 44;
+  --accent-hover-rgb: 36 36 36;
+  --accent-contrast-rgb: 255 255 255;
   --overlay-rgb: 15 23 42;
   --ui-shadow-panel: 0 14px 34px rgba(15, 23, 42, 0.18);
   --left-sidebar-width: 220px;
@@ -75,6 +78,30 @@
 .director-desk-root[data-theme="dark"],
 .director-desk-root.dark {
   color-scheme: dark;
+}
+
+/* Light mode: BOMIIO-style dark highlight (#2c2c2c) on active controls */
+.director-desk-root[data-theme="light"] .ui-segmented-item-active,
+.director-desk-root[data-theme="light"] .mode-toggle-button[aria-pressed="true"],
+.director-desk-root[data-theme="light"] .tab-row button[aria-pressed="true"] {
+  border-color: rgb(var(--accent-rgb));
+  color: rgb(var(--accent-contrast-rgb));
+  background: rgb(var(--accent-rgb));
+}
+
+/* Dark mode: BOMIIO-style lime highlight (#cdf051) on active controls */
+.director-desk-root[data-theme="dark"] .ui-segmented-item-active,
+.director-desk-root[data-theme="dark"] .mode-toggle-button[aria-pressed="true"],
+.director-desk-root[data-theme="dark"] .tab-row button[aria-pressed="true"] {
+  border-color: rgb(var(--accent-rgb));
+  color: rgb(var(--accent-contrast-rgb));
+  background: rgb(var(--accent-rgb));
+}
+
+.director-desk-root[data-theme="dark"] .viewport-toolbar-crowd-confirm.camera-capture-send-all,
+.director-desk-root[data-theme="dark"] .viewport-toolbar-crowd-confirm.camera-capture-send-all:hover,
+.director-desk-root[data-theme="dark"] .viewport-toolbar-crowd-confirm.camera-capture-send-all:focus-visible {
+  color: rgb(var(--accent-contrast-rgb));
 }
 
 .director-desk-root.app-shell {

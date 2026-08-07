@@ -82,6 +82,7 @@ export interface DirectorCameraCapture {
   id: string;
   index: number;
   name: string;
+  /** PNG Data URL stored in project state — `data:image/png;base64,...` */
   dataUrl: string;
 }
 

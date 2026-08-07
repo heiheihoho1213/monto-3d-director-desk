@@ -90,6 +90,52 @@ export function MyPage() {
 
 - `initial`：外部工程快照（`DirectorProject`），每个 `instanceId` 首次就绪时灌入一次（支持异步后到）。
 - `onChange`：工程内容变化时触发（默认防抖 300ms），便于宿主持久化。
+- `ref`：暴露截图 imperative API（见下）。
+
+### 截图 API
+
+所有截图输出的 `dataUrl` 均为 **PNG base64 Data URL**，格式：
+
+```text
+data:image/png;base64,<payload>
+```
+
+类型别名：`DirectorDeskImageDataUrl` / `ScreenshotDataUrl`（可直接用于 `<img src>` 或持久化字符串）。
+
+底部工具栏「当前视角截图」调用链：
+
+`ViewportToolbar.handleCapture("current")` → `requestViewportCapture()` → `DirectorCanvas.CanvasCaptureBridge` 内注册的 WebGL 截图 handler（最终走 `captureViewportCanvas()`）。
+
+外部可通过 `ref` 调用同等能力：
+
+```tsx
+import { useRef } from "react";
+import { DirectorDesk, type DirectorDeskHandle } from "monto-3d-director-desk";
+
+const deskRef = useRef<DirectorDeskHandle>(null);
+
+<DirectorDesk ref={deskRef} onReady={() => console.log("ready")} />;
+
+// 纯视口截图（等同 CapturePanel）
+await deskRef.current?.captureCurrentView();
+
+// 四 / 十二方位
+await deskRef.current?.captureFourDirections();
+await deskRef.current?.captureTwelveDirections();
+
+// 当前机位截图（等同 CameraPanel）
+await deskRef.current?.captureCameraShot("cam_1", { saveToProject: true });
+
+// 等同底部工具栏相机按钮：必要时新建机位、切机位视角、写入工程
+await deskRef.current?.captureFromToolbar("current");
+
+// 发送到宿主（触发 onCapturesSent / postMessage）
+deskRef.current?.sendCaptures([{ dataUrl: "...", fileName: "shot.png" }]);
+```
+
+也可直接 import 低层函数（需组件已挂载且 Canvas 已注册 handler）：
+
+`captureCurrentView` / `captureFourDirections` / `captureTwelveDirections` / `captureCameraShot` / `captureFromViewportToolbar` / `requestViewportCapture`
 
 传入 `material.kind === "panorama"` 且 `url` 非空时，会自动加载该全景图，并禁用工具栏「导入全景图」。
 

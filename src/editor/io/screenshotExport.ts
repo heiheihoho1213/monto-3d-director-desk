@@ -1,3 +1,13 @@
+/**
+ * PNG screenshot encoded as a browser Data URL.
+ *
+ * Format: `data:image/png;base64,<payload>`
+ *
+ * All viewport / camera capture outputs use this shape (not Blob, not raw base64 without the prefix).
+ * Safe to assign to `<img src>` or persist as a string.
+ */
+export type ScreenshotDataUrl = string;
+
 export interface ScreenshotMeta {
   mode: "director" | "camera";
   cameraId: string | null;
@@ -8,7 +18,8 @@ export interface ScreenshotMeta {
 
 export interface ScreenshotResult {
   label: string;
-  dataUrl: string;
+  /** PNG Data URL — see {@link ScreenshotDataUrl}. */
+  dataUrl: ScreenshotDataUrl;
   meta: ScreenshotMeta;
 }
 
@@ -22,7 +33,7 @@ export function buildCaptureFileName(result: ScreenshotResult, index = 0) {
   return `monto-director-desk-${result.meta.mode}${cameraSuffix}-${labelSlug}-${index + 1}.png`;
 }
 
-export function downloadDataUrl(dataUrl: string, fileName: string) {
+export function downloadDataUrl(dataUrl: ScreenshotDataUrl, fileName: string) {
   const anchor = document.createElement("a");
   anchor.href = dataUrl;
   anchor.download = fileName;

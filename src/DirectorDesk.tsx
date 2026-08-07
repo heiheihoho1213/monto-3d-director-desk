@@ -1,5 +1,5 @@
 import "./styles/index.css";
-import { useEffect, useRef, type CSSProperties } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, type CSSProperties } from "react";
 import { X } from "lucide-react";
 import { DirectorDeskShell } from "./app/layout/DirectorDeskShell";
 import { DirectorCanvas } from "./editor/canvas/DirectorCanvas";
@@ -8,8 +8,17 @@ import {
   configureDirectorDeskHost,
   initDirectorDeskHostBridge,
 } from "./editor/io/hostBridge";
+import { createDirectorDeskHandle, type DirectorDeskHandle, type DirectorDeskImageDataUrl } from "./editor/io/directorDeskCaptureApi";
 import type { DirectorProject } from "./editor/schema/directorProject";
 import { useDirectorStore } from "./editor/store/directorStore";
+
+export type {
+  DirectorDeskCapturePreset,
+  DirectorDeskCaptureRequestOptions,
+  DirectorDeskHandle,
+  DirectorDeskScreenshot,
+  DirectorDeskImageDataUrl,
+} from "./editor/io/directorDeskCaptureApi";
 
 export type DirectorDeskTheme = "dark" | "light";
 
@@ -22,8 +31,15 @@ export const DIRECTOR_THEME_SKY_COLORS: Record<DirectorDeskTheme, string> = {
 /** Debounce for host `onChange` so rapid edits do not flood persistence. */
 export const DIRECTOR_DESK_ON_CHANGE_DEBOUNCE_MS = 300;
 
+/**
+ * PNG screenshot payload emitted by `onCapturesSent` and `sendCaptures`.
+ *
+ * `dataUrl` is always a PNG Data URL: `data:image/png;base64,...`
+ */
 export interface DirectorDeskCapture {
-  dataUrl: string;
+  /** PNG Data URL — see {@link DirectorDeskImageDataUrl}. */
+  dataUrl: DirectorDeskImageDataUrl;
+  /** Suggested download / upload file name (typically ends with `.png`). */
   fileName: string;
 }
 
@@ -57,6 +73,7 @@ export interface DirectorDeskProps {
   enablePostMessage?: boolean;
   onReady?: () => void;
   onClose?: () => void;
+  /** Fired when captures are sent to the host. Each `dataUrl` is a PNG base64 Data URL. */
   onCapturesSent?: (captures: DirectorDeskCapture[]) => void;
   /** Fired (debounced) when the editable project content changes. */
   onChange?: (project: DirectorProject) => void;
@@ -76,22 +93,25 @@ function isEditableShortcutTarget(target: EventTarget | null) {
   return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 }
 
-export function DirectorDesk({
-  className,
-  style,
-  title = "3D导演台",
-  theme = "dark",
-  instanceId = null,
-  initial = null,
-  material = null,
-  showCloseButton = true,
-  enableHostBridge = false,
-  enablePostMessage,
-  onReady,
-  onClose,
-  onCapturesSent,
-  onChange,
-}: DirectorDeskProps) {
+export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(function DirectorDesk(
+  {
+    className,
+    style,
+    title = "3D导演台",
+    theme = "dark",
+    instanceId = null,
+    initial = null,
+    material = null,
+    showCloseButton = true,
+    enableHostBridge = false,
+    enablePostMessage,
+    onReady,
+    onClose,
+    onCapturesSent,
+    onChange,
+  },
+  ref
+) {
   const viewMode = useDirectorStore((state) => state.viewMode);
   const setViewMode = useDirectorStore((state) => state.setViewMode);
   const shouldPostMessage = enablePostMessage ?? enableHostBridge;
@@ -107,6 +127,8 @@ export function DirectorDesk({
   onCloseRef.current = onClose;
   onCapturesSentRef.current = onCapturesSent;
   onChangeRef.current = onChange;
+
+  useImperativeHandle(ref, () => createDirectorDeskHandle(), []);
 
   useEffect(() => {
     configureDirectorDeskHost({
@@ -355,4 +377,4 @@ export function DirectorDesk({
       </DirectorDeskShell>
     </div>
   );
-}
+});

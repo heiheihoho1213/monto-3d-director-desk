@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   DirectorDesk,
   DIRECTOR_THEME_SKY_COLORS,
   createDefaultDirectorProject,
   type DirectorDeskCapture,
+  type DirectorDeskHandle,
   type DirectorDeskMaterial,
+  type DirectorDeskScreenshot,
   type DirectorDeskTheme,
   type DirectorProject,
 } from "monto-3d-director-desk";
@@ -107,8 +109,22 @@ export default function App() {
   const [draftJson, setDraftJson] = useState(() => toPrettyJson(defaultProject));
   const [formError, setFormError] = useState<string | null>(null);
   const [latestProject, setLatestProject] = useState<DirectorProject | null>(null);
+  const [captureBusy, setCaptureBusy] = useState(false);
+  const [captureError, setCaptureError] = useState<string | null>(null);
+  const [captureSaveToProject, setCaptureSaveToProject] = useState(false);
+  const [captureSendToHost, setCaptureSendToHost] = useState(true);
+  const [captureCameraId, setCaptureCameraId] = useState("");
+  const [lastCaptureTest, setLastCaptureTest] = useState<{
+    method: string;
+    results: DirectorDeskScreenshot[];
+  } | null>(null);
 
+  const deskRef = useRef<DirectorDeskHandle>(null);
   const instanceId = useMemo(() => `docs-playground-${scopeNonce}`, [scopeNonce]);
+  const cameraOptions = useMemo(() => {
+    const project = latestProject ?? initial;
+    return project.cameras.map((camera) => ({ id: camera.id, name: camera.name }));
+  }, [initial, latestProject]);
   const material = useMemo<DirectorDeskMaterial | null>(() => {
     const url = panoramaUrl.trim();
     if (!url) return null;
@@ -151,6 +167,32 @@ export default function App() {
       return next;
     });
   }
+
+  async function runCaptureTest(method: string, action: () => Promise<DirectorDeskScreenshot[]>) {
+    if (!deskRef.current) {
+      setCaptureError("DirectorDesk ref 未就绪，请等 onReady 后再试");
+      return;
+    }
+
+    setCaptureBusy(true);
+    setCaptureError(null);
+    try {
+      const results = await action();
+      setLastCaptureTest({ method, results });
+      setLastEvent(`${method} (${results.length})`);
+      console.log(method, results);
+    } catch (error) {
+      setCaptureError(error instanceof Error ? error.message : `${method} 失败`);
+      setLastEvent(`${method} error`);
+    } finally {
+      setCaptureBusy(false);
+    }
+  }
+
+  const captureOptions = {
+    saveToProject: captureSaveToProject,
+    sendToHost: captureSendToHost,
+  };
 
   return (
     <div className="docs-page" data-theme={theme}>
@@ -308,6 +350,129 @@ export default function App() {
           <p className="docs-hint">提示：上面按钮灰掉是因为还没有 onChange 数据。在视口里移动角色/改属性后会自动亮起。</p>
         ) : null}
 
+        <section className="docs-form-section">
+          <h2>截图 API 测试（ref）</h2>
+          <div className="docs-checkboxes">
+            <label>
+              <input
+                type="checkbox"
+                checked={captureSaveToProject}
+                onChange={(event) => setCaptureSaveToProject(event.target.checked)}
+              />
+              saveToProject
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={captureSendToHost}
+                onChange={(event) => setCaptureSendToHost(event.target.checked)}
+              />
+              sendToHost（触发 onCapturesSent）
+            </label>
+          </div>
+          <label className="docs-field">
+            <span>captureCameraShot 机位 ID</span>
+            <select value={captureCameraId} onChange={(event) => setCaptureCameraId(event.target.value)}>
+              <option value="">默认 activeCamera</option>
+              {cameraOptions.map((camera) => (
+                <option key={camera.id} value={camera.id}>
+                  {camera.name} ({camera.id})
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="docs-debug-actions">
+            <button
+              type="button"
+              disabled={captureBusy}
+              onClick={() =>
+                void runCaptureTest("captureCurrentView", () =>
+                  deskRef.current!.captureCurrentView(captureOptions)
+                )
+              }
+            >
+              captureCurrentView
+            </button>
+            <button
+              type="button"
+              disabled={captureBusy}
+              onClick={() =>
+                void runCaptureTest("captureFourDirections", () =>
+                  deskRef.current!.captureFourDirections(captureOptions)
+                )
+              }
+            >
+              captureFourDirections
+            </button>
+            <button
+              type="button"
+              disabled={captureBusy}
+              onClick={() =>
+                void runCaptureTest("captureTwelveDirections", () =>
+                  deskRef.current!.captureTwelveDirections(captureOptions)
+                )
+              }
+            >
+              captureTwelveDirections
+            </button>
+            <button
+              type="button"
+              disabled={captureBusy}
+              onClick={() =>
+                void runCaptureTest("captureCameraShot", () =>
+                  deskRef.current!.captureCameraShot(captureCameraId || undefined, captureOptions)
+                )
+              }
+            >
+              captureCameraShot
+            </button>
+            <button
+              type="button"
+              disabled={captureBusy}
+              onClick={() =>
+                void runCaptureTest("captureFromToolbar(current)", () =>
+                  deskRef.current!.captureFromToolbar("current", {
+                    sendToHost: captureSendToHost,
+                  })
+                )
+              }
+            >
+              captureFromToolbar(current)
+            </button>
+            <button
+              type="button"
+              disabled={captureBusy || !lastCaptureTest?.results.length}
+              onClick={() => {
+                const items = lastCaptureTest?.results ?? [];
+                deskRef.current?.sendCaptures(
+                  items.map((item) => ({ dataUrl: item.dataUrl, fileName: item.fileName }))
+                );
+                setLastEvent(`sendCaptures (${items.length})`);
+              }}
+            >
+              sendCaptures（最近一批）
+            </button>
+          </div>
+          {captureError ? <p className="docs-form-error">{captureError}</p> : null}
+          {lastCaptureTest ? (
+            <div className="docs-captures">
+              <h3>
+                最近测试：{lastCaptureTest.method} · {lastCaptureTest.results.length} 张
+              </h3>
+              <ul>
+                {lastCaptureTest.results.map((item) => (
+                  <li key={`${item.fileName}-${item.label}`}>
+                    <img src={item.dataUrl} alt={item.label} />
+                    <span>
+                      {item.label} · {item.fileName}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+
         <hr style={{ width: "100%" }} />
 
         <dl className="docs-meta">
@@ -362,6 +527,7 @@ export default function App() {
 
       <main className="docs-stage">
         <DirectorDesk
+          ref={deskRef}
           key={instanceId}
           theme={theme}
           instanceId={instanceId}

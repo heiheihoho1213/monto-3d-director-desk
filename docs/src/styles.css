@@ -230,7 +230,8 @@ body {
   word-break: break-word;
 }
 
-.docs-captures h2 {
+.docs-captures h2,
+.docs-captures h3 {
   margin: 0 0 10px;
   font-size: 14px;
 }

@@ -5,7 +5,8 @@ it("uses the theme tokens instead of the temporary demo palette", () => {
 
   expect(css).toMatch(/:root\s*\{[\s\S]*?color-scheme:\s*light;[\s\S]*?--panel-rgb:\s*255 255 255;[\s\S]*?--field-rgb:\s*248 250 252;[\s\S]*?--border-rgb:\s*224 224 224;[\s\S]*?--text-rgb:\s*0 0 0;/);
   expect(css).toMatch(/:root\[data-theme="dark"\],\s*[\r\n]+\s*:root\.dark,\s*[\r\n]+\s*\.director-desk-root\[data-theme="dark"\],\s*[\r\n]+\s*\.director-desk-root\.dark\s*\{[\s\S]*?color-scheme:\s*dark;[\s\S]*?--panel-rgb:\s*26 26 26;[\s\S]*?--field-rgb:\s*10 10 12;[\s\S]*?--border-rgb:\s*42 42 42;[\s\S]*?--text-rgb:\s*255 255 255;/);
-  expect(css).toContain("--accent-rgb: 3 150 255;");
+  expect(css).toMatch(/:root\s*\{[\s\S]*?--accent-rgb:\s*44 44 44;/);
+  expect(css).toMatch(/:root\[data-theme="dark"\][\s\S]*?--accent-rgb:\s*205 240 81;/);
   expect(css).toContain(".ui-panel");
   expect(css).toContain(".ui-field");
   expect(css).toContain(".ui-segmented-item-active");
@@ -62,6 +63,8 @@ it("matches the provided top bar and view switch dimensions", () => {
   expect(css).toMatch(/\.mode-toggle\s*\{[\s\S]*?width:\s*212px;[\s\S]*?height:\s*44px;[\s\S]*?border-radius:\s*12px;/);
   expect(css).toMatch(/\.mode-toggle-button\s*\{[\s\S]*?width:\s*100px;[\s\S]*?height:\s*36px;[\s\S]*?font-size:\s*14px;[\s\S]*?line-height:\s*20px;/);
   expect(css).toMatch(/\.mode-toggle-button\[aria-pressed="true"\]\s*\{[\s\S]*?border-color:\s*rgb\(var\(--accent-rgb\) \/ 0\.28\);[\s\S]*?color:\s*rgb\(var\(--accent-rgb\)\);[\s\S]*?background:\s*rgb\(var\(--accent-rgb\) \/ 0\.12\);/);
+  expect(css).toMatch(/\.director-desk-root\[data-theme="light"\]\s*\.mode-toggle-button\[aria-pressed="true"\][\s\S]*?background:\s*rgb\(var\(--accent-rgb\)\);/);
+  expect(css).toMatch(/\.director-desk-root\[data-theme="dark"\]\s*\.mode-toggle-button\[aria-pressed="true"\][\s\S]*?background:\s*rgb\(var\(--accent-rgb\)\);/);
   expect(css).not.toContain("border-color: #334B71;");
   expect(css).not.toContain("color: #397AE4;");
   expect(css).not.toContain("background: #1E2735;");

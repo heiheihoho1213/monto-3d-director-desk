@@ -13,7 +13,7 @@ import {
 import { Euler, Matrix4, PerspectiveCamera as ThreePerspectiveCamera, Quaternion, Spherical, Vector3 } from "three";
 import type { Object3D } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { clearViewportCaptureHandler, setViewportCaptureHandler } from "../io/captureBridge";
+import { clearViewportCaptureHandler, setViewportCaptureHandler, setViewportCameraSnapshotProvider } from "../io/captureBridge";
 import { buildScreenshotMeta, type ScreenshotResult } from "../io/screenshotExport";
 import { useDirectorStore, type CameraShotSnapshot } from "../store/directorStore";
 import { DEFAULT_DIRECTOR_CAMERA_VIEW_SNAPSHOT, getCameraViewSnapshotFromShot } from "../schema/cameraGeometry";
@@ -644,6 +644,11 @@ export function DirectorCanvas() {
   function getViewportCameraSnapshot(): CameraShotSnapshot {
     return viewportCameraSnapshotRef.current;
   }
+
+  useEffect(() => {
+    setViewportCameraSnapshotProvider(getViewportCameraSnapshot);
+    return () => setViewportCameraSnapshotProvider(null);
+  }, []);
 
   function updateDirectorViewSnapshot(snapshot: CameraShotSnapshot) {
     viewportCameraSnapshotRef.current = snapshot;

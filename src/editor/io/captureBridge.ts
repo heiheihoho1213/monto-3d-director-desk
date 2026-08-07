@@ -1,3 +1,4 @@
+import type { CameraShotSnapshot } from "../store/directorStore";
 import type { ScreenshotResult } from "./screenshotExport";
 
 export type ViewportCapturePreset = "current" | "four" | "twelve";
@@ -9,8 +10,10 @@ export interface ViewportCaptureRequest {
 }
 
 export type ViewportCaptureHandler = (request: ViewportCaptureRequest) => Promise<ScreenshotResult[]>;
+export type ViewportCameraSnapshotProvider = () => CameraShotSnapshot;
 
 let viewportCaptureHandler: ViewportCaptureHandler | null = null;
+let viewportCameraSnapshotProvider: ViewportCameraSnapshotProvider | null = null;
 
 export function setViewportCaptureHandler(handler: ViewportCaptureHandler) {
   viewportCaptureHandler = handler;
@@ -18,6 +21,14 @@ export function setViewportCaptureHandler(handler: ViewportCaptureHandler) {
 
 export function clearViewportCaptureHandler() {
   viewportCaptureHandler = null;
+}
+
+export function setViewportCameraSnapshotProvider(provider: ViewportCameraSnapshotProvider | null) {
+  viewportCameraSnapshotProvider = provider;
+}
+
+export function getViewportCameraSnapshotProvider() {
+  return viewportCameraSnapshotProvider;
 }
 
 export async function requestViewportCapture(request: ViewportCaptureRequest) {
