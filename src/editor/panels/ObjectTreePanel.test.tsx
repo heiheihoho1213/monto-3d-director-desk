@@ -302,6 +302,11 @@ it("selects a row from anywhere inside the list row without needing repeated cli
 
 it("keeps flag buttons from also selecting the row", async () => {
   const user = userEvent.setup();
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    selectedObjectId: null,
+    selectedObjectIds: [],
+  });
   render(<ObjectTreePanel />);
 
   await user.click(screen.getByLabelText("角色01 可见性"));

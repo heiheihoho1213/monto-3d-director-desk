@@ -235,6 +235,12 @@ function renderDirectorWorkspace() {
 }
 
 it("renders a live R3F viewport and director scene controls", () => {
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    selectedObjectId: null,
+    selectedObjectIds: [],
+  });
+
   renderDirectorWorkspace();
 
   expect(screen.getByTestId("director-canvas")).toBeInTheDocument();
