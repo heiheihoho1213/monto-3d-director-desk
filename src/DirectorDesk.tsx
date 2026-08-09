@@ -1,5 +1,5 @@
 import "./styles/index.css";
-import { forwardRef, useEffect, useImperativeHandle, useRef, type CSSProperties } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, type CSSProperties, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { DirectorDeskShell } from "./app/layout/DirectorDeskShell";
 import { DirectorCanvas } from "./editor/canvas/DirectorCanvas";
@@ -54,7 +54,8 @@ export type DirectorDeskMaterial = {
 export interface DirectorDeskProps {
   className?: string;
   style?: CSSProperties;
-  title?: string;
+  /** Top-bar title; accepts a string or custom React nodes (e.g. host back button + label). */
+  title?: ReactNode;
   theme?: DirectorDeskTheme;
   /** Isolate localStorage scene persistence when embedding multiple desks. */
   instanceId?: string | null;
@@ -336,7 +337,7 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
     <div className={rootClassName} data-theme={theme} style={style}>
       <header className="top-bar">
         <div className="top-bar-left">
-          <h1 className="top-bar-title">{title}</h1>
+          <div className="top-bar-title">{title}</div>
         </div>
         <div className="top-bar-center">
           <div className="mode-toggle ui-segmented" role="group" aria-label="视角切换">

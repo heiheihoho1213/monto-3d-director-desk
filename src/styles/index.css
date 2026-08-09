@@ -1,53 +1,3 @@
-:root {
-  color-scheme: light;
-  --bg-rgb: 255 255 255;
-  --surface-rgb: 245 245 245;
-  --surface-hover-rgb: 235 235 235;
-  --panel-rgb: 255 255 255;
-  --field-rgb: 248 250 252;
-  --border-rgb: 224 224 224;
-  --text-rgb: 0 0 0;
-  --text-muted-rgb: 102 102 102;
-  --text-dim-rgb: 148 148 148;
-  --accent-rgb: 44 44 44;
-  --accent-hover-rgb: 36 36 36;
-  --accent-contrast-rgb: 255 255 255;
-  --overlay-rgb: 15 23 42;
-  --ui-shadow-panel: 0 14px 34px rgba(15, 23, 42, 0.18);
-  --left-sidebar-width: 220px;
-  --right-sidebar-width: 300px;
-  --left-sidebar-content-width: 180px;
-  --right-sidebar-content-width: 260px;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: rgb(var(--bg-rgb));
-  color: rgb(var(--text-rgb));
-}
-
-:root[data-theme="dark"],
-:root.dark,
-.director-desk-root[data-theme="dark"],
-.director-desk-root.dark {
-  color-scheme: dark;
-  --bg-rgb: 9 9 9;
-  --surface-rgb: 26 26 26;
-  --surface-hover-rgb: 34 34 34;
-  --panel-rgb: 26 26 26;
-  --field-rgb: 10 10 12;
-  --border-rgb: 42 42 42;
-  --text-rgb: 255 255 255;
-  --text-muted-rgb: 136 136 136;
-  --text-dim-rgb: 95 95 95;
-  --accent-rgb: 205 240 81;
-  --accent-hover-rgb: 184 228 65;
-  --accent-contrast-rgb: 9 9 9;
-  --overlay-rgb: 0 0 0;
-  --ui-shadow-panel: 0 14px 34px rgba(0, 0, 0, 0.38);
-}
-
 .director-desk-root {
   color-scheme: light;
   --bg-rgb: 255 255 255;
@@ -70,14 +20,38 @@
   --right-sidebar-content-width: 260px;
   height: 100%;
   min-height: 0;
-  background: rgb(var(--bg-rgb));
+  /* Transparent so frosted chrome can blur the viewport / host behind it. */
+  background: transparent;
   color: rgb(var(--text-rgb));
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --top-bar-height: 70px;
+  --glass-panel-bg: rgb(var(--panel-rgb) / 0.72);
+  --glass-panel-blur: 32px;
 }
 
 .director-desk-root[data-theme="dark"],
 .director-desk-root.dark {
   color-scheme: dark;
+  --bg-rgb: 9 9 9;
+  --surface-rgb: 26 26 26;
+  --surface-hover-rgb: 34 34 34;
+  --panel-rgb: 26 26 26;
+  --field-rgb: 10 10 12;
+  --border-rgb: 42 42 42;
+  --text-rgb: 255 255 255;
+  --text-muted-rgb: 136 136 136;
+  --text-dim-rgb: 95 95 95;
+  --accent-rgb: 205 240 81;
+  --accent-hover-rgb: 184 228 65;
+  --accent-contrast-rgb: 9 9 9;
+  --overlay-rgb: 0 0 0;
+  --ui-shadow-panel: 0 14px 34px rgba(0, 0, 0, 0.38);
 }
 
 /* Light mode: BOMIIO-style dark highlight (#2c2c2c) on active controls */
@@ -108,80 +82,96 @@
   min-height: 0;
 }
 
-* {
+.director-desk-root *,
+.director-desk-root *::before,
+.director-desk-root *::after {
   box-sizing: border-box;
+}
+
+.director-desk-root * {
   scrollbar-width: thin;
   scrollbar-color: rgb(var(--border-rgb) / 0.5) transparent;
 }
 
-button,
-input,
-select,
-textarea {
+/* Use :where() so this does not outrank component font-size rules (e.g. .inspector-text-input). */
+.director-desk-root :where(button, input, select, textarea) {
   font: inherit;
 }
 
-button {
+.director-desk-root button {
   cursor: pointer;
 }
 
-input,
-select,
-textarea {
+.director-desk-root input,
+.director-desk-root select,
+.director-desk-root textarea {
   color: inherit;
 }
 
-button:focus-visible {
+.director-desk-root button:focus-visible {
   outline: 2px solid rgb(var(--accent-rgb) / 0.78);
   outline-offset: 1px;
 }
 
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+.director-desk-root input:focus-visible,
+.director-desk-root select:focus-visible,
+.director-desk-root textarea:focus-visible {
   outline: 1px solid rgb(var(--accent-rgb) / 0.78);
   outline-offset: 1px;
 }
 
-::-webkit-scrollbar {
+.director-desk-root ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
+.director-desk-root ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+.director-desk-root ::-webkit-scrollbar-thumb {
   background: rgb(var(--border-rgb) / 0.5);
   border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.director-desk-root ::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--accent-rgb) / 0.4);
 }
 
 .app-shell {
+  position: relative;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   overflow: hidden;
 }
 
 .top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
   display: grid;
   grid-template-columns: var(--left-sidebar-width) minmax(0, 1fr) var(--right-sidebar-width);
   align-items: center;
   gap: 0;
-  min-height: 70px;
+  min-height: var(--top-bar-height);
   padding: 0 20px;
-  border: 1px solid rgb(var(--border-rgb) / 0.24);
-  background: rgb(var(--panel-rgb));
+  border: 0;
+  border-bottom: 1px solid rgb(var(--border-rgb) / 0.24);
+  background: var(--glass-panel-bg);
+  backdrop-filter: blur(var(--glass-panel-blur));
+  -webkit-backdrop-filter: blur(var(--glass-panel-blur));
   font-family: "PingFang SC", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .top-bar-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
   margin: 0;
   font-size: 16px;
   font-weight: 600;
@@ -441,7 +431,7 @@ textarea:focus-visible {
 .right-sidebar,
 .director-sidebar {
   position: absolute;
-  top: 0;
+  top: var(--top-bar-height, 70px);
   bottom: 0;
   z-index: 25;
   display: flex;
@@ -450,13 +440,14 @@ textarea:focus-visible {
   min-height: 0;
   overflow: auto;
   padding-right: 0;
-  background: rgb(var(--panel-rgb) / 0.98);
+  background: var(--glass-panel-bg);
+  backdrop-filter: blur(var(--glass-panel-blur));
+  -webkit-backdrop-filter: blur(var(--glass-panel-blur));
 }
 
 .left-sidebar {
   left: 0;
   width: var(--left-sidebar-width);
-  background: rgb(var(--panel-rgb));
   border-right: 1px solid rgb(var(--border-rgb) / 0.24);
 }
 
@@ -464,7 +455,6 @@ textarea:focus-visible {
   right: 0;
   width: var(--right-sidebar-width);
   overflow-x: hidden;
-  background: rgb(var(--panel-rgb));
   border-left: 1px solid rgb(var(--border-rgb) / 0.24);
 }
 
@@ -642,14 +632,14 @@ textarea:focus-visible {
   gap: 0;
   border: 0;
   border-radius: 0;
-  background: rgb(var(--panel-rgb));
+  background: transparent;
   box-shadow: none;
   font-family: "PingFang SC", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .right-sidebar .right-inspector {
   gap: 0;
-  background: rgb(var(--panel-rgb));
+  background: transparent;
 }
 
 .right-inspector-header {
@@ -1497,13 +1487,13 @@ textarea:focus-visible {
   height: 100%;
   gap: 25px;
   padding: 20px;
-  background: rgb(var(--panel-rgb));
+  background: transparent;
 }
 
 .left-sidebar .object-tree-panel {
   gap: 25px;
   padding: 20px;
-  background: rgb(var(--panel-rgb));
+  background: transparent;
 }
 
 .object-search-field {
@@ -2352,7 +2342,7 @@ textarea:focus-visible {
 
 .viewport-gizmo-overlay {
   position: absolute;
-  top: 20px;
+  top: calc(var(--top-bar-height, 70px) + 20px);
   right: 20px;
   z-index: 20;
   width: 80px;
@@ -2942,7 +2932,9 @@ textarea:focus-visible {
   height: 78px;
   padding: 20px;
   border-top: 1px solid rgb(var(--border-rgb) / 0.24);
-  background: rgb(var(--panel-rgb));
+  background: var(--glass-panel-bg);
+  backdrop-filter: blur(var(--glass-panel-blur));
+  -webkit-backdrop-filter: blur(var(--glass-panel-blur));
 }
 
 .camera-capture-current-button,

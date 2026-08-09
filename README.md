@@ -148,7 +148,7 @@ pnpm install
 pnpm build
 ```
 
-产物在 `dist/`（`monto-3d-director-desk.js`、`style.css`、类型声明）。
+产物在 `dist/`（`monto-3d-director-desk.js`、`style.css`、类型声明）。样式已限定在 `.director-desk-root` 下，不会污染宿主页面的全局元素。
 
 本地 playground（会先执行 `pnpm build`）：
 
