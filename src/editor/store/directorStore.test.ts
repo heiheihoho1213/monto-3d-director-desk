@@ -498,6 +498,15 @@ it("keeps persisted director scenes isolated per canvas card instance", () => {
   expect(useDirectorStore.getState().project.scene.backgroundColor).toBe("#303640");
 });
 
+it("can open a scoped scene without restoring localStorage", () => {
+  useDirectorStore.getState().openScopedScene("node_director_skip_ls");
+  useDirectorStore.getState().updateScene({ backgroundColor: "#abcdef" });
+
+  useDirectorStore.getState().openScopedScene("node_director_skip_ls", { includePersistedScene: false });
+
+  expect(useDirectorStore.getState().project.scene.backgroundColor).toBe("#000000");
+});
+
 it("hydrates the initial state from the persisted director scene snapshot", () => {
   localStorage.setItem(
     "monto-3d-director-desk-demo",

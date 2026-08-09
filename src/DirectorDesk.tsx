@@ -61,6 +61,7 @@ export interface DirectorDeskProps {
   instanceId?: string | null;
   /**
    * Seed the desk with an external project snapshot.
+   * Takes priority over localStorage for the current `instanceId` (skips restore when present).
    * Applied once per `instanceId` when first available (including async load).
    * Later in-session edits are owned by the component until the next scope change.
    */
@@ -117,6 +118,8 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
   const setViewMode = useDirectorStore((state) => state.setViewMode);
   const shouldPostMessage = enablePostMessage ?? enableHostBridge;
 
+  const initialRef = useRef(initial);
+  initialRef.current = initial;
   const onReadyRef = useRef(onReady);
   const onCloseRef = useRef(onClose);
   const onCapturesSentRef = useRef(onCapturesSent);
@@ -166,7 +169,18 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
 
     appliedInitialScopeRef.current = null;
     suppressChangeRef.current = true;
-    useDirectorStore.getState().openScopedScene(instanceId);
+
+    // Prefer `initial` over localStorage when the host already seeded the project.
+    const seed = initialRef.current;
+    const hasInitial = Boolean(seed);
+    useDirectorStore.getState().openScopedScene(instanceId, {
+      includePersistedScene: !hasInitial,
+    });
+
+    if (seed) {
+      useDirectorStore.getState().replaceProject(cloneProject(seed));
+      appliedInitialScopeRef.current = instanceId ?? "";
+    }
 
     const release = window.setTimeout(() => {
       suppressChangeRef.current = false;

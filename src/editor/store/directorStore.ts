@@ -143,7 +143,10 @@ export interface DirectorActions {
   copySelectedObjects: () => void;
   pasteClipboardObjects: () => void;
   undo: () => void;
-  openScopedScene: (scopeId: string | null | undefined) => void;
+  openScopedScene: (
+    scopeId: string | null | undefined,
+    options?: { includePersistedScene?: boolean }
+  ) => void;
   replaceProject: (project: DirectorProject) => void;
   saveLatestSnapshot: () => void;
   restoreLatestSnapshot: () => void;
@@ -2045,12 +2048,13 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
       });
       writePersistedDirectorState(previousState);
     },
-    openScopedScene: (scopeId) => {
+    openScopedScene: (scopeId, options = {}) => {
+      const { includePersistedScene = true } = options;
       const currentState = get() as DirectorRuntimeState;
       setDirectorScenePersistenceScopeId(scopeId);
       const snapshot = createInitialDirectorState({
         includePersistedLocalAssets: true,
-        includePersistedScene: true,
+        includePersistedScene,
         persistenceScopeId: directorScenePersistenceScopeId,
       });
       const runtimeState = createRuntimeStateFromPersistedState(snapshot);
@@ -2061,7 +2065,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         clipboardPasteCount: currentState.clipboardPasteCount,
         undoStack: [],
       });
-      writePersistedDirectorState(snapshot);
+      writePersistedDirectorState(extractPersistedDirectorState(get() as DirectorRuntimeState));
     },
     replaceProject: (project) =>
       commitMutation((state) => {

@@ -154,6 +154,39 @@ it("hydrates from initial project once per instance scope", () => {
   expect(useDirectorStore.getState().project.scene.backgroundColor).toBe("#000000");
 });
 
+it("prefers initial over localStorage for the same instanceId", () => {
+  const stale = createDefaultDirectorProject();
+  stale.objects = stale.objects.map((object) =>
+    object.id === "char_default_a" ? { ...object, name: "本地缓存角色" } : object
+  );
+  localStorage.setItem(
+    "monto-3d-director-desk-demo:scope-initial-wins",
+    JSON.stringify({
+      viewMode: "director",
+      selectedObjectId: "char_default_a",
+      selectedObjectIds: ["char_default_a"],
+      directorInspectorMode: "auto",
+      transformMode: "translate",
+      viewportAspectRatio: "auto",
+      viewportRuleOfThirdsEnabled: false,
+      viewportPanelsCollapsed: false,
+      project: stale,
+    })
+  );
+
+  const initial = createDefaultDirectorProject();
+  initial.objects = initial.objects.map((object) =>
+    object.id === "char_default_a" ? { ...object, name: "宿主初始角色" } : object
+  );
+
+  render(
+    <DirectorDesk instanceId="scope-initial-wins" initial={initial} showCloseButton={false} />
+  );
+
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "宿主初始角色")).toBe(true);
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "本地缓存角色")).toBe(false);
+});
+
 it("debounces onChange when project content changes", () => {
   vi.useFakeTimers();
   const onChange = vi.fn();
