@@ -11,7 +11,7 @@ vi.mock("./editor/canvas/DirectorCanvas", () => ({
   DirectorCanvas: () => <div data-testid="mock-director-canvas" />,
 }));
 
-import { DirectorDesk, DIRECTOR_DESK_ON_CHANGE_DEBOUNCE_MS } from "./DirectorDesk";
+import { DirectorDesk, DIRECTOR_DESK_ON_CHANGE_DEBOUNCE_MS, DIRECTOR_THEME_SKY_COLORS } from "./DirectorDesk";
 
 function renderDesk() {
   return render(<DirectorDesk enableHostBridge showCloseButton />);
@@ -123,6 +123,32 @@ it("supports Cmd/Ctrl+C and Cmd/Ctrl+V to duplicate the selected object", async 
   expect(characters).toHaveLength(2);
   expect(characters[1]?.id).not.toBe("char_default_a");
   expect(state.selectedObjectId).toBe(characters[1]?.id ?? null);
+});
+
+it("does not undo initialization-only scene setup on Cmd/Ctrl+Z", async () => {
+  const user = userEvent.setup();
+  const initial = createDefaultDirectorProject();
+
+  render(
+    <DirectorDesk
+      instanceId="docs-playground-init"
+      initial={initial}
+      theme="light"
+      showCloseButton={false}
+    />
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+  });
+
+  expect(useDirectorStore.getState().undoStack).toHaveLength(0);
+  expect(useDirectorStore.getState().project.scene.backgroundColor).toBe(DIRECTOR_THEME_SKY_COLORS.light);
+
+  await user.keyboard("{Control>}z{/Control}");
+
+  expect(useDirectorStore.getState().project.scene.backgroundColor).toBe(DIRECTOR_THEME_SKY_COLORS.light);
+  expect(useDirectorStore.getState().undoStack).toHaveLength(0);
 });
 
 it("supports Cmd/Ctrl+Z to undo the latest scene edit", async () => {
