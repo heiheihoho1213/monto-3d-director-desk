@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { Box, Camera, ChevronDown, ChevronRight, Eye, EyeOff, Lock, Search, Unlock, User, Users } from "lucide-react";
 import type { DirectorObject, DirectorObjectKind } from "../schema/directorProject";
+import { resolveSelectedObjectIds } from "../store/directorSelectors";
 import { useDirectorStore } from "../store/directorStore";
 
 type SceneTreePreviewItem = {
@@ -59,6 +60,10 @@ export function ObjectTreePanel() {
   const selectedObjectId = useDirectorStore((state) => state.selectedObjectId);
   const selectedObjectIds = useDirectorStore((state) => state.selectedObjectIds);
   const selectedCrowdId = useDirectorStore((state) => state.selectedCrowdId);
+  const resolvedSelectedObjectIds = useMemo(
+    () => resolveSelectedObjectIds({ selectedObjectId, selectedObjectIds, project: { objects } }),
+    [objects, selectedObjectId, selectedObjectIds]
+  );
   const selectObject = useDirectorStore((state) => state.selectObject);
   const selectCrowd = useDirectorStore((state) => state.selectCrowd);
   const toggleObjectSelection = useDirectorStore((state) => state.toggleObjectSelection);
@@ -73,6 +78,7 @@ export function ObjectTreePanel() {
       if (event.key !== "Delete" && event.key !== "Backspace") return;
       if (isEditableKeyboardTarget(event.target)) return;
       const state = useDirectorStore.getState();
+      if (state.viewMode !== "director") return;
       if (!state.selectedObjectId && state.selectedObjectIds.length === 0) return;
 
       event.preventDefault();
@@ -276,9 +282,7 @@ export function ObjectTreePanel() {
   }
 
   function getSelectedIds() {
-    const state = useDirectorStore.getState();
-    if (state.selectedObjectIds.length) return state.selectedObjectIds;
-    return state.selectedObjectId ? [state.selectedObjectId] : [];
+    return resolvedSelectedObjectIds;
   }
 
   return (
@@ -309,12 +313,11 @@ export function ObjectTreePanel() {
               <ul className="object-list">
                 {group.items.map((item) => {
                   const selected = item.crowdId
-                    ? selectedCrowdId === item.crowdId || item.objectIds.every((id) => selectedObjectIds.includes(id))
+                    ? selectedCrowdId === item.crowdId ||
+                      item.objectIds.every((id) => resolvedSelectedObjectIds.includes(id))
                     : item.objectIds.length > 1
-                      ? item.objectIds.every((id) => selectedObjectIds.includes(id))
-                      : selectedObjectIds.length
-                        ? selectedObjectIds.includes(item.id)
-                        : item.id === selectedObjectId;
+                      ? item.objectIds.every((id) => resolvedSelectedObjectIds.includes(id))
+                      : resolvedSelectedObjectIds.includes(item.id);
                   const expanded = item.crowdId ? expandedCrowdIds.includes(item.crowdId) : false;
 
                   return (

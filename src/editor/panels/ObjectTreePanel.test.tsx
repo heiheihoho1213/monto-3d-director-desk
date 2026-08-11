@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach } from "vitest";
 import { createInitialDirectorState, useDirectorStore } from "../store/directorStore";
@@ -280,6 +280,38 @@ it("keeps any object backed by a model asset visible in my models even when olde
   expect(within(screen.getByRole("group", { name: "我的模型分组" })).getByRole("button", { name: "微波炉" })).toBeInTheDocument();
 });
 
+it("updates row highlight when selection changes via redo on mounted panel", () => {
+  render(<ObjectTreePanel />);
+
+  act(() => {
+    useDirectorStore.getState().addPresetCharacter("female");
+  });
+  expect(screen.getByRole("treeitem", { name: "角色02" })).toHaveAttribute("aria-selected", "true");
+
+  act(() => {
+    useDirectorStore.getState().undo();
+  });
+  expect(screen.getByRole("treeitem", { name: "角色01" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.queryByRole("treeitem", { name: "角色02" })).not.toBeInTheDocument();
+
+  act(() => {
+    useDirectorStore.getState().redo();
+  });
+  expect(screen.getByRole("treeitem", { name: "角色02" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("treeitem", { name: "角色01" })).toHaveAttribute("aria-selected", "false");
+});
+
+it("reflects restored selection after redo", () => {
+  useDirectorStore.getState().addPresetCharacter("female");
+  useDirectorStore.getState().undo();
+  useDirectorStore.getState().redo();
+
+  render(<ObjectTreePanel />);
+
+  expect(screen.getByRole("treeitem", { name: "角色02" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("treeitem", { name: "角色01" })).toHaveAttribute("aria-selected", "false");
+});
+
 it("selects rows and keeps selected state available for styling", async () => {
   const user = userEvent.setup();
   render(<ObjectTreePanel />);
@@ -361,6 +393,19 @@ it("does not render a delete icon and deletes the selected object with the keybo
   expect(screen.queryByRole("button", { name: "角色02" })).not.toBeInTheDocument();
   expect(useDirectorStore.getState().selectedObjectId).toBeNull();
   expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(false);
+});
+
+it("ignores keyboard delete while in camera view mode", async () => {
+  const user = userEvent.setup();
+  useDirectorStore.getState().addPresetCharacter("female");
+  useDirectorStore.getState().setViewMode("camera");
+  render(<ObjectTreePanel />);
+
+  await user.click(screen.getByRole("button", { name: "角色02" }));
+  await user.keyboard("{Delete}");
+
+  expect(screen.getByRole("button", { name: "角色02" })).toBeInTheDocument();
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(true);
 });
 
 it("switches the active camera when users select a camera row", async () => {

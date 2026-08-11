@@ -23,6 +23,7 @@ import {
   DEFAULT_DIRECTOR_CAMERA_VIEW_SNAPSHOT,
   getCameraRigPositionFromViewSnapshot,
 } from "../schema/cameraGeometry";
+import { resolveSelectedObjectIds } from "./directorSelectors";
 import type { ViewportAspectRatio } from "../schema/viewportAspectRatio";
 
 export type TransformMode = "translate" | "rotate" | "scale";
@@ -85,6 +86,7 @@ interface DirectorInternalState {
   clipboard: DirectorClipboardEntry[];
   clipboardPasteCount: number;
   undoStack: DirectorState[];
+  redoStack: DirectorState[];
   undoBatchDepth: number;
   undoBatchSnapshot: DirectorState | null;
   undoBatchHasTrackedChanges: boolean;
@@ -143,6 +145,7 @@ export interface DirectorActions {
   copySelectedObjects: () => void;
   pasteClipboardObjects: () => void;
   undo: () => void;
+  redo: () => void;
   openScopedScene: (
     scopeId: string | null | undefined,
     options?: { includePersistedScene?: boolean }
@@ -459,6 +462,7 @@ function createRuntimeStateFromPersistedState(state: DirectorState): DirectorRun
     clipboard: [],
     clipboardPasteCount: 0,
     undoStack: [],
+    redoStack: [],
     undoBatchDepth: 0,
     undoBatchSnapshot: null,
     undoBatchHasTrackedChanges: false,
@@ -466,7 +470,65 @@ function createRuntimeStateFromPersistedState(state: DirectorState): DirectorRun
 }
 
 function createUndoStackEntry(state: DirectorRuntimeState) {
-  return extractPersistedDirectorState(state);
+  return extractPersistedDirectorState(normalizeDirectorSelection(state));
+}
+
+function normalizeDirectorSelection(state: DirectorRuntimeState): DirectorRuntimeState {
+  const objectIdSet = new Set(state.project.objects.map((item) => item.id));
+  const validExplicitIds = state.selectedObjectIds.filter((id) => objectIdSet.has(id));
+  const validPrimary =
+    state.selectedObjectId && objectIdSet.has(state.selectedObjectId) ? state.selectedObjectId : null;
+  const selectedObjectIds =
+    validExplicitIds.length > 0 ? validExplicitIds : validPrimary ? [validPrimary] : [];
+  const selectedObjectId = selectedObjectIds[selectedObjectIds.length - 1] ?? null;
+  const selectedCrowdId =
+    state.selectedCrowdId &&
+    state.project.objects.some((item) => item.crowdId === state.selectedCrowdId)
+      ? state.selectedCrowdId
+      : null;
+
+  return {
+    ...state,
+    selectedObjectId,
+    selectedObjectIds,
+    selectedCrowdId,
+  };
+}
+
+function createRuntimeStateFromHistorySnapshot(state: DirectorState): DirectorRuntimeState {
+  return normalizeDirectorSelection(createRuntimeStateFromPersistedState(state));
+}
+
+function mergeSelectionAfterHistoryRestore(
+  before: DirectorRuntimeState,
+  restored: DirectorRuntimeState
+): DirectorRuntimeState {
+  const normalized = normalizeDirectorSelection(restored);
+  if (normalized.selectedObjectId) return normalized;
+
+  const beforeIds = new Set(before.project.objects.map((item) => item.id));
+  const addedObjects = normalized.project.objects.filter((item) => !beforeIds.has(item.id));
+  const addedCharacter = [...addedObjects].reverse().find((item) => item.kind === "character");
+
+  if (addedCharacter) {
+    return normalizeDirectorSelection({
+      ...normalized,
+      selectedObjectId: addedCharacter.id,
+      selectedObjectIds: [addedCharacter.id],
+      directorInspectorMode: normalized.directorInspectorMode === "scene" ? "auto" : normalized.directorInspectorMode,
+    });
+  }
+
+  const objectIdSet = new Set(normalized.project.objects.map((item) => item.id));
+  const preservedSelection = resolveSelectedObjectIds(before).filter((id) => objectIdSet.has(id));
+
+  if (preservedSelection.length === 0) return normalized;
+
+  return normalizeDirectorSelection({
+    ...normalized,
+    selectedObjectId: preservedSelection[preservedSelection.length - 1] ?? null,
+    selectedObjectIds: preservedSelection,
+  });
 }
 
 export function createDefaultDirectorProject({
@@ -1074,6 +1136,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         return {
           ...nextState,
           undoStack: trackUndo ? currentState.undoStack : nextState.undoStack,
+          redoStack: trackUndo ? currentState.redoStack : nextState.redoStack,
           undoBatchDepth: nextState.undoBatchDepth,
           undoBatchSnapshot: nextState.undoBatchSnapshot,
           undoBatchHasTrackedChanges: nextState.undoBatchHasTrackedChanges,
@@ -1082,13 +1145,14 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
 
       const shouldCaptureUndoBatchSnapshot =
         trackUndo && currentState.undoBatchDepth > 0 && currentState.undoBatchSnapshot === null;
-      const nextUndoStack =
-        trackUndo && currentState.undoBatchDepth === 0
-          ? trimUndoStack([...currentState.undoStack, previousSnapshot])
-          : nextState.undoStack;
+      const shouldPushImmediateUndo = trackUndo && currentState.undoBatchDepth === 0;
+      const nextUndoStack = shouldPushImmediateUndo
+        ? trimUndoStack([...currentState.undoStack, previousSnapshot])
+        : nextState.undoStack;
       const runtimeState: DirectorRuntimeState = {
         ...nextState,
         undoStack: nextUndoStack,
+        redoStack: shouldPushImmediateUndo ? [] : nextState.redoStack,
         undoBatchSnapshot: shouldCaptureUndoBatchSnapshot ? previousSnapshot : nextState.undoBatchSnapshot,
         undoBatchHasTrackedChanges:
           trackUndo && currentState.undoBatchDepth > 0 ? true : nextState.undoBatchHasTrackedChanges,
@@ -1144,6 +1208,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
           undoStack: shouldPushUndoEntry
             ? trimUndoStack([...currentState.undoStack, currentState.undoBatchSnapshot!])
             : currentState.undoStack,
+          redoStack: shouldPushUndoEntry ? [] : currentState.redoStack,
           undoBatchDepth: 0,
           undoBatchSnapshot: null,
           undoBatchHasTrackedChanges: false,
@@ -2042,14 +2107,35 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
       const previousState = currentState.undoStack[currentState.undoStack.length - 1];
       if (!previousState) return;
 
-      const runtimeState = createRuntimeStateFromPersistedState(previousState);
+      const currentSnapshot = createUndoStackEntry(currentState);
+      const runtimeState = createRuntimeStateFromHistorySnapshot(previousState);
       set({
         ...runtimeState,
         clipboard: currentState.clipboard,
         clipboardPasteCount: currentState.clipboardPasteCount,
         undoStack: currentState.undoStack.slice(0, -1),
+        redoStack: trimUndoStack([...currentState.redoStack, currentSnapshot]),
       });
-      writePersistedDirectorState(previousState);
+      writePersistedDirectorState(extractPersistedDirectorState(runtimeState));
+    },
+    redo: () => {
+      const currentState = get() as DirectorRuntimeState;
+      const nextState = currentState.redoStack[currentState.redoStack.length - 1];
+      if (!nextState) return;
+
+      const currentSnapshot = createUndoStackEntry(currentState);
+      const runtimeState = mergeSelectionAfterHistoryRestore(
+        currentState,
+        createRuntimeStateFromHistorySnapshot(nextState)
+      );
+      set({
+        ...runtimeState,
+        clipboard: currentState.clipboard,
+        clipboardPasteCount: currentState.clipboardPasteCount,
+        undoStack: trimUndoStack([...currentState.undoStack, currentSnapshot]),
+        redoStack: currentState.redoStack.slice(0, -1),
+      });
+      writePersistedDirectorState(extractPersistedDirectorState(runtimeState));
     },
     openScopedScene: (scopeId, options = {}) => {
       const { includePersistedScene = true } = options;
@@ -2067,6 +2153,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         clipboard: currentState.clipboard,
         clipboardPasteCount: currentState.clipboardPasteCount,
         undoStack: [],
+        redoStack: [],
       });
       writePersistedDirectorState(extractPersistedDirectorState(get() as DirectorRuntimeState));
     },
@@ -2098,6 +2185,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         clipboard: (get() as DirectorRuntimeState).clipboard,
         clipboardPasteCount: (get() as DirectorRuntimeState).clipboardPasteCount,
         undoStack: [],
+        redoStack: [],
       });
       writePersistedDirectorState(snapshot);
     },
