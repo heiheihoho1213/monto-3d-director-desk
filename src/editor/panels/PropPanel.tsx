@@ -88,21 +88,18 @@ export function PropPanel() {
           {
             axis: "X",
             ariaLabel: "模型缩放 X",
-            step: "0.01",
             value: prop.transform.scale[0],
             onChange: (value) => updateObjectTransform(prop.id, { scale: replaceAxis(prop.transform.scale, 0, Number(value)) }),
           },
           {
             axis: "Y",
             ariaLabel: "模型缩放 Y",
-            step: "0.01",
             value: prop.transform.scale[1],
             onChange: (value) => updateObjectTransform(prop.id, { scale: replaceAxis(prop.transform.scale, 1, Number(value)) }),
           },
           {
             axis: "Z",
             ariaLabel: "模型缩放 Z",
-            step: "0.01",
             value: prop.transform.scale[2],
             onChange: (value) => updateObjectTransform(prop.id, { scale: replaceAxis(prop.transform.scale, 2, Number(value)) }),
           },
@@ -114,7 +111,7 @@ export function PropPanel() {
         numberAriaLabel="模型统一缩放"
         max="3"
         min="0.2"
-        step="0.01"
+        step="0.1"
         value={prop.transform.scale[0]}
         onValueChange={(value) => updateUniformScale(prop.id, Number(value))}
       />

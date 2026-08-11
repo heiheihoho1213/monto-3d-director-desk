@@ -86,8 +86,21 @@ it("adjusts axis values by dragging the gray XYZ prefix handles", () => {
   fireEvent.mouseUp(window);
 
   const role = useDirectorStore.getState().project.objects.find((item) => item.id === "char_default_a");
-  expect(role?.transform.position[0]).toBe(2);
-  expect(screen.getByLabelText("角色位置 X")).toHaveValue(2);
+  expect(role?.transform.position[0]).toBe(0.2);
+  expect(screen.getByLabelText("角色位置 X")).toHaveValue(0.2);
+});
+
+it("adjusts axis values by 0.1 when pressing arrow keys in the number input", () => {
+  render(<CharacterPanel />);
+
+  const rotationX = screen.getByLabelText("角色旋转 X");
+  rotationX.focus();
+
+  fireEvent.keyDown(rotationX, { key: "ArrowUp" });
+
+  const role = useDirectorStore.getState().project.objects.find((item) => item.id === "char_default_a");
+  expect(role?.transform.rotation[0]).toBe(0.1);
+  expect(rotationX).toHaveValue(0.1);
 });
 
 it("updates the selected role name and uniform scale", async () => {

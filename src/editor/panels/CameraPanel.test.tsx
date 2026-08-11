@@ -280,11 +280,22 @@ it("keeps the camera capture section visible at the bottom of the properties tab
   expect(screen.getByTestId("camera-current-capture-icon")).toBeInTheDocument();
 });
 
-it("renders the thumbnail actions in a bottom bar and opens the project-style viewer toolbar", async () => {
+it("renders the thumbnail actions in a bottom bar and opens the compact capture preview popup", async () => {
   const user = userEvent.setup();
   seedCameraCapture();
 
-  render(<CameraPanel />);
+  render(
+    <div className="director-desk-root" data-theme="dark">
+      <div className="right-sidebar">
+        <div className="right-inspector">
+          <CameraPanel />
+        </div>
+      </div>
+    </div>
+  );
+
+  const sidebar = screen.getByLabelText("摄像机右侧属性面板").closest(".right-inspector");
+  expect(sidebar).toBeInTheDocument();
 
   expect(screen.getByRole("group", { name: "机位01-截图01 缩略图操作" })).toHaveClass("camera-capture-actions");
 
@@ -293,7 +304,10 @@ it("renders the thumbnail actions in a bottom bar and opens the project-style vi
   const viewer = screen.getByRole("dialog", { name: "相机截图查看器" });
   const toolbar = within(viewer).getByRole("toolbar", { name: "相机截图查看器工具栏" });
 
-  expect(viewer).toBeInTheDocument();
+  expect(viewer).toHaveClass("camera-capture-viewer");
+  expect(screen.getByLabelText("相机截图查看器遮罩")).toBeInTheDocument();
+  expect(sidebar).not.toContainElement(viewer);
+  expect(within(viewer).getByText("机位01-截图01")).toHaveClass("camera-capture-viewer-title");
   expect(screen.getByAltText("机位01-截图01 查看大图")).toBeInTheDocument();
   expect(within(toolbar).getByRole("button", { name: "放大图片" })).toBeInTheDocument();
   expect(within(toolbar).getByRole("button", { name: "缩小图片" })).toBeInTheDocument();
@@ -418,23 +432,23 @@ it("clears every camera screenshot from the screenshots tab and shows the empty 
   ]);
 });
 
-it("closes the capture viewer when clicking outside the image", async () => {
+it("closes the capture viewer when clicking the backdrop", async () => {
   const user = userEvent.setup();
   seedCameraCapture();
 
-  const { container } = render(<CameraPanel />);
+  render(<CameraPanel />);
 
   await user.click(screen.getByLabelText("查看截图 机位01-截图01"));
 
   const previewImage = screen.getByAltText("机位01-截图01 查看大图");
-  const viewerStage = container.querySelector(".camera-capture-viewer-stage");
+  const backdrop = screen.getByLabelText("相机截图查看器遮罩");
 
-  expect(viewerStage).toBeInTheDocument();
+  expect(backdrop).toBeInTheDocument();
 
   await user.click(previewImage);
   expect(screen.getByRole("dialog", { name: "相机截图查看器" })).toBeInTheDocument();
 
-  await user.click(viewerStage as HTMLElement);
+  await user.click(backdrop);
   expect(screen.queryByRole("dialog", { name: "相机截图查看器" })).not.toBeInTheDocument();
 });
 

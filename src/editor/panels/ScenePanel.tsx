@@ -143,21 +143,18 @@ export function ScenePanel() {
           {
             axis: "X",
             ariaLabel: "场景旋转 X",
-            step: "1",
             value: scene.rotation[0],
             onChange: (value) => updateScene({ rotation: replaceAxis(scene.rotation, 0, Number(value)) }),
           },
           {
             axis: "Y",
             ariaLabel: "场景旋转 Y",
-            step: "1",
             value: scene.rotation[1],
             onChange: (value) => updateScene({ rotation: replaceAxis(scene.rotation, 1, Number(value)) }),
           },
           {
             axis: "Z",
             ariaLabel: "场景旋转 Z",
-            step: "1",
             value: scene.rotation[2],
             onChange: (value) => updateScene({ rotation: replaceAxis(scene.rotation, 2, Number(value)) }),
           },

@@ -145,13 +145,16 @@ it("matches the provided right inspector layout dimensions and field styling", (
   expect(css).toMatch(/\.right-sidebar\s*\.right-inspector\s*button\.camera-capture-action\s*\{[\s\S]*?color:\s*rgb\(255 255 255 \/ 0\.82\);/);
   expect(css).toMatch(/\.right-sidebar\s*\.right-inspector\s*button\.camera-capture-action:hover,\s*[\r\n]+\s*\.right-sidebar\s*\.right-inspector\s*button\.camera-capture-action:focus-visible\s*\{[\s\S]*?color:\s*rgb\(255 255 255\);/);
   expect(css).toMatch(/\.camera-capture-name\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?line-height:\s*17px;[\s\S]*?white-space:\s*nowrap;[\s\S]*?overflow:\s*hidden;[\s\S]*?text-overflow:\s*ellipsis;/);
-  expect(css).toMatch(/\.camera-capture-viewer\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;[\s\S]*?z-index:\s*100000;[\s\S]*?display:\s*flex;[\s\S]*?align-items:\s*center;[\s\S]*?justify-content:\s*center;[\s\S]*?background:\s*rgb\(0 0 0 \/ 0\.9\);[\s\S]*?backdrop-filter:\s*blur\(4px\);/);
-  expect(css).toMatch(/\.camera-capture-viewer-toolbar\s*\{[\s\S]*?position:\s*absolute;[\s\S]*?top:\s*16px;[\s\S]*?right:\s*16px;[\s\S]*?display:\s*flex;[\s\S]*?gap:\s*8px;[\s\S]*?z-index:\s*10;/);
-  expect(css).toMatch(/\.camera-capture-viewer-tool\s*\{[\s\S]*?width:\s*40px;[\s\S]*?height:\s*40px;[\s\S]*?border:\s*1px solid rgb\(255 255 255 \/ 0\.1\);[\s\S]*?border-radius:\s*8px;[\s\S]*?background:\s*rgb\(255 255 255 \/ 0\.1\);/);
-  expect(css).toMatch(/\.right-inspector\s*button\.camera-capture-viewer-tool\s*\{[\s\S]*?color:\s*rgb\(255 255 255 \/ 0\.9\);/);
-  expect(css).toMatch(/\.right-inspector\s*button\.camera-capture-viewer-tool:hover,\s*[\r\n]+\s*\.right-inspector\s*button\.camera-capture-viewer-tool:focus-visible\s*\{[\s\S]*?color:\s*rgb\(255 255 255\);/);
-  expect(css).toMatch(/\.camera-capture-viewer-stage\s*\{[\s\S]*?display:\s*grid;[\s\S]*?place-items:\s*center;[\s\S]*?width:\s*100%;[\s\S]*?height:\s*100%;/);
-  expect(css).toMatch(/\.camera-capture-viewer-image\s*\{[\s\S]*?max-width:\s*80vw;[\s\S]*?max-height:\s*80vh;[\s\S]*?user-select:\s*none;[\s\S]*?border-radius:\s*8px;[\s\S]*?object-fit:\s*contain;[\s\S]*?transition:\s*transform 0\.2s ease;/);
+  expect(css).toMatch(/\.camera-capture-viewer-backdrop\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;[\s\S]*?z-index:\s*100000;[\s\S]*?display:\s*flex;[\s\S]*?align-items:\s*center;[\s\S]*?justify-content:\s*center;[\s\S]*?background:\s*rgb\(0 0 0 \/ 0\.45\);[\s\S]*?backdrop-filter:\s*blur\(4px\);/);
+  expect(css).toMatch(/\.camera-capture-viewer\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;[\s\S]*?width:\s*min\(720px,\s*calc\(100vw - 48px\)\);[\s\S]*?max-height:\s*min\(640px,\s*calc\(100vh - 48px\)\);[\s\S]*?border-radius:\s*12px;[\s\S]*?background:\s*var\(--glass-panel-bg\);[\s\S]*?backdrop-filter:\s*blur\(var\(--glass-panel-blur\)\);/);
+  expect(css).toMatch(/\.camera-capture-viewer-header\s*\{[\s\S]*?display:\s*flex;[\s\S]*?align-items:\s*center;[\s\S]*?justify-content:\s*space-between;[\s\S]*?border-bottom:\s*1px solid rgb\(var\(--border-rgb\) \/ 0\.24\);/);
+  expect(css).toMatch(/\.camera-capture-viewer-title\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?text-overflow:\s*ellipsis;/);
+  expect(css).toMatch(/\.camera-capture-viewer-toolbar\s*\{[\s\S]*?display:\s*flex;[\s\S]*?gap:\s*6px;/);
+  expect(css).toMatch(/\.camera-capture-viewer-tool\s*\{[\s\S]*?width:\s*32px;[\s\S]*?height:\s*32px;[\s\S]*?border:\s*1px solid rgb\(var\(--border-rgb\) \/ 0\.24\);[\s\S]*?border-radius:\s*8px;[\s\S]*?background:\s*rgb\(var\(--surface-hover-rgb\) \/ 0\.42\);/);
+  expect(css).toMatch(/\.right-inspector\s*button\.camera-capture-viewer-tool\s*\{[\s\S]*?color:\s*rgb\(var\(--text-muted-rgb\)\);/);
+  expect(css).toMatch(/\.right-inspector\s*button\.camera-capture-viewer-tool:hover,\s*[\r\n]+\s*\.right-inspector\s*button\.camera-capture-viewer-tool:focus-visible\s*\{[\s\S]*?color:\s*rgb\(var\(--text-rgb\)\);/);
+  expect(css).toMatch(/\.camera-capture-viewer-stage\s*\{[\s\S]*?display:\s*grid;[\s\S]*?place-items:\s*center;[\s\S]*?min-height:\s*min\(520px,\s*calc\(100vh - 120px\)\);[\s\S]*?overflow:\s*hidden;[\s\S]*?background:\s*#000000;/);
+  expect(css).toMatch(/\.camera-capture-viewer-image\s*\{[\s\S]*?max-width:\s*100%;[\s\S]*?max-height:\s*min\(560px,\s*calc\(100vh - 160px\)\);[\s\S]*?user-select:\s*none;[\s\S]*?border-radius:\s*6px;[\s\S]*?object-fit:\s*contain;[\s\S]*?transition:\s*transform 0\.2s ease;/);
   expect(css).toMatch(/\.camera-capture-viewer-image\.is-zoomed\s*\{[\s\S]*?cursor:\s*grab;/);
   expect(css).toMatch(/\.camera-capture-viewer-image\.is-dragging\s*\{[\s\S]*?cursor:\s*grabbing;[\s\S]*?transition:\s*none;/);
   expect(css).not.toContain(".panorama-preview-card");
@@ -227,7 +230,7 @@ it("uses the selected image card capsule style for viewport icon actions", () =>
 it("renders the model library panel with the same frosted glass background treatment", () => {
   const css = readFileSync("src/styles/index.css", "utf8");
 
-  expect(css).toMatch(/\.model-library-panel\s*\{[\s\S]*?border:\s*1px solid rgb\(var\(--border-rgb\) \/ 0\.35\);[\s\S]*?background:\s*rgb\(var\(--panel-rgb\) \/ 0\.9\);[\s\S]*?backdrop-filter:\s*blur\(32px\);[\s\S]*?-webkit-backdrop-filter:\s*blur\(32px\);/);
+  expect(css).toMatch(/\.model-library-panel\s*\{[\s\S]*?border:\s*1px solid rgb\(var\(--border-rgb\) \/ 0\.35\);[\s\S]*?background:\s*rgb\(var\(--panel-rgb\) \/ 0\.9\);[\s\S]*?-webkit-backdrop-filter:\s*blur\(32px\);[\s\S]*?backdrop-filter:\s*blur\(32px\);/);
   expect(css).toMatch(/\.model-library-tab\.is-active::after\s*\{[\s\S]*?width:\s*28px;[\s\S]*?height:\s*3px;[\s\S]*?border-radius:\s*0;[\s\S]*?background:\s*rgb\(var\(--accent-rgb\)\);/);
   expect(css).toMatch(/\.model-library-close-button\s*\{[\s\S]*?display:\s*grid;[\s\S]*?place-items:\s*center;[\s\S]*?width:\s*28px;[\s\S]*?height:\s*28px;[\s\S]*?padding:\s*0;[\s\S]*?line-height:\s*0;/);
   expect(css).toMatch(/\.model-library-close-button\s*svg\s*\{[\s\S]*?display:\s*block;/);
