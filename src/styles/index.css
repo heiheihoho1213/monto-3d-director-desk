@@ -162,8 +162,8 @@
   border: 0;
   border-bottom: 1px solid rgb(var(--border-rgb) / 0.24);
   background: var(--glass-panel-bg);
-  backdrop-filter: blur(var(--glass-panel-blur));
   -webkit-backdrop-filter: blur(var(--glass-panel-blur));
+  backdrop-filter: blur(var(--glass-panel-blur));
   font-family: "PingFang SC", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -441,8 +441,8 @@
   overflow: auto;
   padding-right: 0;
   background: var(--glass-panel-bg);
-  backdrop-filter: blur(var(--glass-panel-blur));
   -webkit-backdrop-filter: blur(var(--glass-panel-blur));
+  backdrop-filter: blur(var(--glass-panel-blur));
 }
 
 .left-sidebar {
@@ -874,8 +874,8 @@
   border-radius: 8px;
   background: rgb(var(--panel-rgb) / 0.78);
   box-shadow: var(--ui-shadow-panel);
-  backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
 }
 
 .inspector-dropdown-option {
@@ -1849,8 +1849,8 @@
   border-radius: 999px;
   background: rgb(var(--panel-rgb) / 0.78);
   box-shadow: var(--ui-shadow-panel);
-  backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
   overflow: visible;
 }
 
@@ -1905,8 +1905,8 @@
   border-radius: 14px;
   background: rgb(var(--panel-rgb) / 0.9);
   box-shadow: var(--ui-shadow-panel);
-  backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
   transform: translateX(-50%);
 }
 
@@ -1963,8 +1963,8 @@
   border-radius: 14px;
   background: rgb(var(--panel-rgb) / 0.9);
   box-shadow: var(--ui-shadow-panel);
-  backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
 }
 
 .viewport-toolbar-crowd-panel {
@@ -1978,8 +1978,8 @@
   border-radius: 22px;
   background: rgb(var(--panel-rgb) / 0.9);
   box-shadow: var(--ui-shadow-panel);
-  backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
 }
 
 .viewport-toolbar-crowd-panel-header {
@@ -2129,8 +2129,8 @@
   color: rgb(var(--text-rgb));
   background: rgb(var(--panel-rgb) / 0.9);
   box-shadow: var(--ui-shadow-panel);
-  backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
   transform: translateX(-50%);
 }
 
@@ -2242,8 +2242,8 @@
   inset: 0;
   z-index: 0;
   background: rgb(10 12 18 / 0.22);
-  backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
   -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
   -webkit-mask-size: 100% 100%, var(--viewport-aspect-frame-width) var(--viewport-aspect-frame-height);
   -webkit-mask-position: 0 0, var(--viewport-aspect-frame-left) var(--viewport-aspect-frame-top);
@@ -2279,8 +2279,8 @@
   color: rgb(255 255 255 / 0.58);
   background: rgb(255 255 255 / 0.08);
   box-shadow: none;
-  backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
   pointer-events: auto;
   transition:
     background-color 0.18s ease,
@@ -2398,8 +2398,8 @@
   color: rgb(var(--text-rgb));
   background: rgb(var(--panel-rgb) / 0.9);
   box-shadow: var(--ui-shadow-panel);
-  backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
+  backdrop-filter: blur(32px);
   overflow: hidden;
   transform: translateX(-50%);
 }
@@ -2842,8 +2842,8 @@
   padding: 0;
   border-radius: 0 0 8px 8px;
   background: rgb(0 0 0 / 0.72);
-  backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.16s ease;
@@ -2933,8 +2933,8 @@
   padding: 20px;
   border-top: 1px solid rgb(var(--border-rgb) / 0.24);
   background: var(--glass-panel-bg);
-  backdrop-filter: blur(var(--glass-panel-blur));
   -webkit-backdrop-filter: blur(var(--glass-panel-blur));
+  backdrop-filter: blur(var(--glass-panel-blur));
 }
 
 .camera-capture-current-button,
@@ -3035,8 +3035,8 @@
   align-items: center;
   justify-content: center;
   background: rgb(0 0 0 / 0.9);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 
 .camera-capture-viewer-toolbar {
@@ -3157,8 +3157,8 @@
   color: rgba(255, 255, 255, 0.72);
   line-height: 0;
   background: rgba(0, 0, 0, 0.52);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
