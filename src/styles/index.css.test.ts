@@ -227,7 +227,7 @@ it("uses the selected image card capsule style for viewport icon actions", () =>
 it("renders the model library panel with the same frosted glass background treatment", () => {
   const css = readFileSync("src/styles/index.css", "utf8");
 
-  expect(css).toMatch(/\.model-library-panel\s*\{[\s\S]*?border:\s*1px solid rgb\(var\(--border-rgb\) \/ 0\.35\);[\s\S]*?background:\s*rgb\(var\(--panel-rgb\) \/ 0\.9\);[\s\S]*?backdrop-filter:\s*blur\(32px\);[\s\S]*?-webkit-backdrop-filter:\s*blur\(32px\);/);
+  expect(css).toMatch(/\.model-library-panel\s*\{[\s\S]*?border:\s*1px solid rgb\(var\(--border-rgb\) \/ 0\.35\);[\s\S]*?background:\s*rgb\(var\(--panel-rgb\) \/ 0\.9\);[\s\S]*?-webkit-backdrop-filter:\s*blur\(32px\);[\s\S]*?backdrop-filter:\s*blur\(32px\);/);
   expect(css).toMatch(/\.model-library-tab\.is-active::after\s*\{[\s\S]*?width:\s*28px;[\s\S]*?height:\s*3px;[\s\S]*?border-radius:\s*0;[\s\S]*?background:\s*rgb\(var\(--accent-rgb\)\);/);
   expect(css).toMatch(/\.model-library-close-button\s*\{[\s\S]*?display:\s*grid;[\s\S]*?place-items:\s*center;[\s\S]*?width:\s*28px;[\s\S]*?height:\s*28px;[\s\S]*?padding:\s*0;[\s\S]*?line-height:\s*0;/);
   expect(css).toMatch(/\.model-library-close-button\s*svg\s*\{[\s\S]*?display:\s*block;/);
