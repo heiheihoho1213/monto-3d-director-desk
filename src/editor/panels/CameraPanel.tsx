@@ -1,5 +1,6 @@
 import { Camera, Download, Eye, Images, Send, Trash2, X, ZoomIn, ZoomOut } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   InspectorAxisGroup,
   InspectorPanel,
@@ -28,6 +29,7 @@ export function CameraPanel() {
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [hoveredCaptureId, setHoveredCaptureId] = useState<string | null>(null);
   const [viewerCapture, setViewerCapture] = useState<DirectorCameraCapture | null>(null);
+  const [viewerPortalRoot, setViewerPortalRoot] = useState<HTMLElement | null>(null);
   const [viewerScale, setViewerScale] = useState(1);
   const [viewerOffset, setViewerOffset] = useState({ x: 0, y: 0 });
   const [viewerDragging, setViewerDragging] = useState(false);
@@ -82,6 +84,11 @@ export function CameraPanel() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [viewerCapture]);
+
+  useLayoutEffect(() => {
+    const root = document.querySelector(".director-desk-root");
+    setViewerPortalRoot(root instanceof HTMLElement ? root : document.body);
+  }, []);
 
   useEffect(() => {
     if (viewerScale <= 1) {
@@ -390,7 +397,7 @@ export function CameraPanel() {
   }
 
   function renderViewer() {
-    if (!viewerCapture) {
+    if (!viewerCapture || !viewerPortalRoot) {
       return null;
     }
 
@@ -402,66 +409,90 @@ export function CameraPanel() {
       .filter(Boolean)
       .join(" ");
 
-    return (
+    const viewer = (
       <div
-        aria-label="相机截图查看器"
-        className="camera-capture-viewer"
-        role="dialog"
+        aria-label="相机截图查看器遮罩"
+        className="camera-capture-viewer-backdrop"
+        role="presentation"
         onClick={closeViewer}
       >
         <div
-          aria-label="相机截图查看器工具栏"
-          className="camera-capture-viewer-toolbar"
-          role="toolbar"
+          aria-label="相机截图查看器"
+          aria-modal="true"
+          className="camera-capture-viewer"
+          role="dialog"
           onClick={(event) => event.stopPropagation()}
         >
-          <button
-            aria-label="放大图片"
-            className="camera-capture-viewer-tool"
-            type="button"
-            onClick={() => handleViewerZoom("in")}
-          >
-            <ZoomIn aria-hidden="true" size={18} strokeWidth={2} />
-          </button>
-          <button
-            aria-label="缩小图片"
-            className="camera-capture-viewer-tool"
-            type="button"
-            onClick={() => handleViewerZoom("out")}
-          >
-            <ZoomOut aria-hidden="true" size={18} strokeWidth={2} />
-          </button>
-          <button
-            aria-label="下载图片"
-            className="camera-capture-viewer-tool"
-            type="button"
-            onClick={() => downloadDataUrl(viewerCapture.dataUrl, `${viewerCapture.name}.png`)}
-          >
-            <Download aria-hidden="true" size={18} strokeWidth={2} />
-          </button>
-          <button
-            aria-label="关闭相机截图查看器"
-            className="camera-capture-viewer-tool camera-capture-viewer-close"
-            type="button"
-            onClick={closeViewer}
-          >
-            <X aria-hidden="true" size={18} strokeWidth={2} />
-          </button>
-        </div>
-        <div className="camera-capture-viewer-stage">
-          <img
-            className={viewerImageClassName}
-            alt={`${viewerCapture.name} 查看大图`}
-            src={viewerCapture.dataUrl}
-            style={{ transform: `translate(${viewerOffset.x}px, ${viewerOffset.y}px) scale(${viewerScale})` }}
-            onClick={(event) => event.stopPropagation()}
-            onWheel={handleViewerWheel}
-            onMouseDown={handleViewerMouseDown}
-            draggable={false}
-          />
+          <div className="camera-capture-viewer-header">
+            <span className="camera-capture-viewer-title" title={viewerCapture.name}>
+              {viewerCapture.name}
+            </span>
+            <div
+              aria-label="相机截图查看器工具栏"
+              className="camera-capture-viewer-toolbar"
+              role="toolbar"
+            >
+              <button
+                aria-label="放大图片"
+                className="camera-capture-viewer-tool"
+                type="button"
+                onClick={() => handleViewerZoom("in")}
+              >
+                <ZoomIn aria-hidden="true" size={16} strokeWidth={2} />
+              </button>
+              <button
+                aria-label="缩小图片"
+                className="camera-capture-viewer-tool"
+                type="button"
+                onClick={() => handleViewerZoom("out")}
+              >
+                <ZoomOut aria-hidden="true" size={16} strokeWidth={2} />
+              </button>
+              <button
+                aria-label="下载图片"
+                className="camera-capture-viewer-tool"
+                type="button"
+                onClick={() => downloadDataUrl(viewerCapture.dataUrl, `${viewerCapture.name}.png`)}
+              >
+                <Download aria-hidden="true" size={16} strokeWidth={2} />
+              </button>
+              <button
+                aria-label="关闭相机截图查看器"
+                className="camera-capture-viewer-tool camera-capture-viewer-close"
+                type="button"
+                onClick={closeViewer}
+              >
+                <X aria-hidden="true" size={16} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
+          <div className="camera-capture-viewer-stage">
+            <img
+              className={viewerImageClassName}
+              alt={`${viewerCapture.name} 查看大图`}
+              src={viewerCapture.dataUrl}
+              style={{ transform: `translate(${viewerOffset.x}px, ${viewerOffset.y}px) scale(${viewerScale})` }}
+              onWheel={handleViewerWheel}
+              onMouseDown={handleViewerMouseDown}
+              draggable={false}
+            />
+          </div>
         </div>
       </div>
     );
+
+    const portalContent = viewerPortalRoot.classList.contains("director-desk-root")
+      ? viewer
+      : (
+        <div
+          className="director-desk-root"
+          data-theme={document.querySelector(".director-desk-root")?.getAttribute("data-theme") ?? "dark"}
+        >
+          {viewer}
+        </div>
+      );
+
+    return createPortal(portalContent, viewerPortalRoot);
   }
 
   return (
