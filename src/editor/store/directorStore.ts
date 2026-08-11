@@ -104,7 +104,7 @@ export interface DirectorActions {
   selectCrowd: (crowdId: string | null) => void;
   toggleObjectSelection: (id: string) => void;
   openSceneInspector: () => void;
-  updateScene: (patch: Partial<SceneSettings>) => void;
+  updateScene: (patch: Partial<SceneSettings>, options?: { trackUndo?: boolean }) => void;
   removePanoramaAsset: () => void;
   removeImportedAsset: (assetId: string) => void;
   updateObjectTransform: (id: string, patch: Partial<DirectorTransform>) => void;
@@ -1277,17 +1277,20 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         selectedObjectIds: [],
         selectedCrowdId: null,
       })),
-    updateScene: (patch) =>
-      commitMutation((state) => ({
-        ...state,
-        project: {
-          ...state.project,
-          scene: {
-            ...state.project.scene,
-            ...patch,
+    updateScene: (patch, options) =>
+      commitMutation(
+        (state) => ({
+          ...state,
+          project: {
+            ...state.project,
+            scene: {
+              ...state.project.scene,
+              ...patch,
+            },
           },
-        },
-      })),
+        }),
+        { trackUndo: options?.trackUndo ?? true }
+      ),
     removePanoramaAsset: () =>
       commitMutation((state) => {
         const panoramaAssetId = state.project.panoramaAssetId;
@@ -2068,18 +2071,21 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
       writePersistedDirectorState(extractPersistedDirectorState(get() as DirectorRuntimeState));
     },
     replaceProject: (project) =>
-      commitMutation((state) => {
-        const firstCharacterId = project.objects.find((item) => item.kind === "character")?.id ?? null;
+      commitMutation(
+        (state) => {
+          const firstCharacterId = project.objects.find((item) => item.kind === "character")?.id ?? null;
 
-        return {
-          ...state,
-          project: cloneJsonValue(project),
-          selectedObjectId: firstCharacterId,
-          selectedObjectIds: firstCharacterId ? [firstCharacterId] : [],
-          selectedCrowdId: null,
-          directorInspectorMode: "auto",
-        };
-      }),
+          return {
+            ...state,
+            project: cloneJsonValue(project),
+            selectedObjectId: firstCharacterId,
+            selectedObjectIds: firstCharacterId ? [firstCharacterId] : [],
+            selectedCrowdId: null,
+            directorInspectorMode: "auto",
+          };
+        },
+        { trackUndo: false }
+      ),
     saveLatestSnapshot: () => {
       writePersistedDirectorState(extractPersistedDirectorState(get() as DirectorRuntimeState));
     },

@@ -212,7 +212,7 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
 
   useEffect(() => {
     suppressChangeRef.current = true;
-    useDirectorStore.getState().updateScene({ backgroundColor: DIRECTOR_THEME_SKY_COLORS[theme] });
+    useDirectorStore.getState().updateScene({ backgroundColor: DIRECTOR_THEME_SKY_COLORS[theme] }, { trackUndo: false });
     const release = window.setTimeout(() => {
       suppressChangeRef.current = false;
     }, 0);
