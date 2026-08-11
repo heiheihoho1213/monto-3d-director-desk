@@ -165,6 +165,41 @@ it("supports Cmd/Ctrl+Z to undo the latest scene edit", async () => {
   expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(false);
 });
 
+it("supports Cmd/Ctrl+Shift+Z to redo the latest undone scene edit", async () => {
+  const user = userEvent.setup();
+  renderDesk();
+
+  act(() => {
+    useDirectorStore.getState().addPresetCharacter("female");
+  });
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(true);
+
+  await user.keyboard("{Control>}z{/Control}");
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(false);
+
+  await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(true);
+});
+
+it("ignores global edit shortcuts while in camera view mode", async () => {
+  const user = userEvent.setup();
+  renderDesk();
+
+  act(() => {
+    useDirectorStore.getState().addPresetCharacter("female");
+  });
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(true);
+
+  await user.click(screen.getByRole("button", { name: "机位视角" }));
+  await user.click(screen.getByRole("button", { name: "角色01" }));
+  await user.keyboard("{Control>}c{/Control}");
+  await user.keyboard("{Control>}v{/Control}");
+  await user.keyboard("{Control>}z{/Control}");
+
+  expect(useDirectorStore.getState().project.objects.filter((item) => item.kind === "character")).toHaveLength(2);
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(true);
+});
+
 it("hydrates from initial project once per instance scope", () => {
   const initial = createDefaultDirectorProject();
   initial.scene.backgroundColor = "#112233";

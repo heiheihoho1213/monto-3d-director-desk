@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
 import { createDefaultDirectorProject, createInitialDirectorState, useDirectorStore } from "./directorStore";
 import { selectRightPanelKind } from "./directorSelectors";
 import { getCameraRigPositionFromViewSnapshot } from "../schema/cameraGeometry";
@@ -31,6 +32,7 @@ beforeEach(() => {
     clipboard: [],
     clipboardPasteCount: 0,
     undoStack: [],
+    redoStack: [],
     undoBatchDepth: 0,
     undoBatchSnapshot: null,
     undoBatchHasTrackedChanges: false,
@@ -98,6 +100,7 @@ it("routes the right panel by object type and view mode", () => {
   const propState = {
     ...state,
     selectedObjectId: "prop_model_1",
+    selectedObjectIds: ["prop_model_1"],
     project: {
       ...state.project,
       objects: [
@@ -130,10 +133,16 @@ it("routes the right panel by object type and view mode", () => {
   };
 
   expect(selectRightPanelKind({ ...state, selectedObjectId: null, selectedObjectIds: [] })).toBe("scene");
-  expect(selectRightPanelKind({ ...state, selectedObjectId: characterId })).toBe("character");
-  expect(selectRightPanelKind({ ...state, selectedObjectId: cameraObjectId })).toBe("camera");
+  expect(
+    selectRightPanelKind({ ...state, selectedObjectId: characterId, selectedObjectIds: [characterId] })
+  ).toBe("character");
+  expect(
+    selectRightPanelKind({ ...state, selectedObjectId: cameraObjectId, selectedObjectIds: [cameraObjectId] })
+  ).toBe("camera");
   expect(selectRightPanelKind(propState)).toBe("prop");
-  expect(selectRightPanelKind({ ...state, viewMode: "camera", selectedObjectId: null })).toBe("camera");
+  expect(selectRightPanelKind({ ...state, viewMode: "camera", selectedObjectId: null, selectedObjectIds: [] })).toBe(
+    "camera"
+  );
 });
 
 it("routes a selected crowd group to the role panel", () => {
@@ -149,6 +158,7 @@ it("routes older model-backed scene objects to the model panel", () => {
     selectRightPanelKind({
       ...state,
       selectedObjectId: "obj_scene_model_1",
+      selectedObjectIds: ["obj_scene_model_1"],
       project: {
         ...state.project,
         assets: [
@@ -641,6 +651,133 @@ it("undoes the latest scene mutation", () => {
 
   expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(false);
   expect(useDirectorStore.getState().project.objects.filter((item) => item.kind === "character")).toHaveLength(1);
+  expect(useDirectorStore.getState().redoStack).toHaveLength(1);
+});
+
+it("normalizes inconsistent selection when redoing", () => {
+  useDirectorStore.getState().addPresetCharacter("female");
+  const addedId = useDirectorStore.getState().selectedObjectId;
+
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    selectedObjectId: "char_default_a",
+    selectedObjectIds: addedId ? [addedId] : [],
+  });
+
+  useDirectorStore.getState().undo();
+  useDirectorStore.getState().redo();
+
+  expect(useDirectorStore.getState().selectedObjectId).toBe(addedId);
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual(addedId ? [addedId] : []);
+});
+
+it("restores object selection when redoing an added character", () => {
+  const beforeId = useDirectorStore.getState().selectedObjectId;
+  useDirectorStore.getState().addPresetCharacter("female");
+  const addedId = useDirectorStore.getState().selectedObjectId;
+
+  expect(addedId).toBeTruthy();
+  expect(addedId).not.toBe(beforeId);
+
+  useDirectorStore.getState().undo();
+  expect(useDirectorStore.getState().selectedObjectId).toBe(beforeId);
+
+  useDirectorStore.getState().redo();
+
+  expect(useDirectorStore.getState().selectedObjectId).toBe(addedId);
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual([addedId]);
+});
+
+it("restores object selection when redoing a pasted character", () => {
+  useDirectorStore.getState().copySelectedObjects();
+  useDirectorStore.getState().pasteClipboardObjects();
+  const pastedId = useDirectorStore.getState().selectedObjectId;
+
+  expect(useDirectorStore.getState().project.objects.filter((item) => item.kind === "character")).toHaveLength(2);
+  expect(pastedId).toBeTruthy();
+
+  useDirectorStore.getState().undo();
+  expect(useDirectorStore.getState().project.objects.filter((item) => item.kind === "character")).toHaveLength(1);
+
+  useDirectorStore.getState().redo();
+
+  expect(useDirectorStore.getState().project.objects.filter((item) => item.kind === "character")).toHaveLength(2);
+  expect(useDirectorStore.getState().selectedObjectId).toBe(pastedId);
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual([pastedId]);
+});
+
+it("redoes the latest undone scene mutation", () => {
+  useDirectorStore.getState().addPresetCharacter("female");
+  useDirectorStore.getState().undo();
+
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(false);
+
+  useDirectorStore.getState().redo();
+
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(true);
+  expect(useDirectorStore.getState().redoStack).toHaveLength(0);
+});
+
+it("keeps character selection after redo reaches the end of the redo stack", () => {
+  useDirectorStore.getState().addPresetCharacter("female");
+  const addedId = useDirectorStore.getState().selectedObjectId;
+
+  expect(addedId).toBeTruthy();
+
+  useDirectorStore.getState().undo();
+  useDirectorStore.getState().redo();
+  useDirectorStore.getState().redo();
+
+  expect(useDirectorStore.getState().redoStack).toHaveLength(0);
+  expect(useDirectorStore.getState().selectedObjectId).toBe(addedId);
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual([addedId]);
+});
+
+it("keeps character selection after redoing multiple undone scene edits to the head", () => {
+  useDirectorStore.getState().addPresetCharacter("female");
+  const addedId = useDirectorStore.getState().selectedObjectId;
+
+  expect(addedId).toBeTruthy();
+
+  useDirectorStore.getState().updateObjectTransform(addedId!, { position: [2, 0, 0] });
+
+  useDirectorStore.getState().undo();
+  useDirectorStore.getState().undo();
+
+  useDirectorStore.getState().redo();
+  useDirectorStore.getState().redo();
+  useDirectorStore.getState().redo();
+
+  expect(useDirectorStore.getState().redoStack).toHaveLength(0);
+  expect(useDirectorStore.getState().project.objects.some((item) => item.id === addedId)).toBe(true);
+  expect(useDirectorStore.getState().selectedObjectId).toBe(addedId);
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual([addedId]);
+});
+
+it("preserves selection when redo snapshot was captured after a ui-only deselect", () => {
+  useDirectorStore.getState().addPresetCharacter("female");
+  const addedId = useDirectorStore.getState().selectedObjectId;
+
+  expect(addedId).toBeTruthy();
+
+  useDirectorStore.getState().openSceneInspector();
+  expect(useDirectorStore.getState().selectedObjectId).toBeNull();
+
+  useDirectorStore.getState().undo();
+  useDirectorStore.getState().redo();
+
+  expect(useDirectorStore.getState().selectedObjectId).toBe(addedId);
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual([addedId]);
+});
+
+it("clears redo history after a new scene mutation", () => {
+  useDirectorStore.getState().addPresetCharacter("female");
+  useDirectorStore.getState().undo();
+  expect(useDirectorStore.getState().redoStack).toHaveLength(1);
+
+  useDirectorStore.getState().addPresetCharacter("broad");
+
+  expect(useDirectorStore.getState().redoStack).toHaveLength(0);
 });
 
 it("groups repeated transform updates into one undo step while batching", () => {

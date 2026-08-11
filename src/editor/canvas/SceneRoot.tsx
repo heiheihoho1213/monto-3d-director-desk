@@ -19,6 +19,7 @@ import {
 } from "../schema/cameraGeometry";
 import { VIEWPORT_OBJECT_LABEL_VERTICAL_GAP } from "../schema/viewportLabels";
 import type { TransformMode } from "../store/directorStore";
+import { resolvePrimarySelectedObjectId } from "../store/directorSelectors";
 import { useDirectorStore } from "../store/directorStore";
 import { CharacterModel } from "../runtime/CharacterModel";
 import { getGroundedLabelY } from "../runtime/mannequin/bodyTypes";
@@ -101,6 +102,7 @@ function ViewportTransformControls({
 
   return (
     <TransformControls
+      key={typeof object === "object" && object && "uuid" in object ? object.uuid : "viewport-transform-controls"}
       ref={setControlsRef}
       mode={mode}
       object={object}
@@ -756,7 +758,12 @@ export function SceneRoot() {
   const panoramaAssetId = useDirectorStore((state) => state.project.panoramaAssetId);
   const viewMode = useDirectorStore((state) => state.viewMode);
   const selectedObjectId = useDirectorStore((state) => state.selectedObjectId);
+  const selectedObjectIds = useDirectorStore((state) => state.selectedObjectIds);
   const selectedCrowdId = useDirectorStore((state) => state.selectedCrowdId);
+  const primarySelectedObjectId = useMemo(
+    () => resolvePrimarySelectedObjectId({ selectedObjectId, selectedObjectIds, project: { objects } }),
+    [objects, selectedObjectId, selectedObjectIds]
+  );
   const transformMode = useDirectorStore((state) => state.transformMode);
   const selectObject = useDirectorStore((state) => state.selectObject);
   const selectCrowd = useDirectorStore((state) => state.selectCrowd);
@@ -820,7 +827,7 @@ export function SceneRoot() {
               key={item.id}
               asset={asset}
               item={item}
-              selected={item.crowdId ? false : item.id === selectedObjectId}
+              selected={item.crowdId ? false : item.id === primarySelectedObjectId}
               showLabels={scene.showLabels}
               transformMode={transformMode}
               transformable={!item.locked}
@@ -851,7 +858,7 @@ export function SceneRoot() {
                 key={camera.id}
                 camera={camera}
                 object={object}
-                selected={object?.id === selectedObjectId}
+                selected={object?.id === primarySelectedObjectId}
                 showLabel={scene.showLabels}
                 transformMode={transformMode}
                 transformable={Boolean(object && !object.locked)}

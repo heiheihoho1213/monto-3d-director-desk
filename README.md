@@ -167,9 +167,12 @@ pnpm dev:docs
 
 ## 快捷键
 
+以下快捷键仅在**导演视角**下生效（机位视角下不会触发）：
+
 - `Ctrl/Cmd + C`：复制当前选中对象
 - `Ctrl/Cmd + V`：粘贴复制对象
 - `Ctrl/Cmd + Z`：撤销最近一次操作
+- `Ctrl/Cmd + Shift + Z`：重做最近一次撤销
 - `Delete / Backspace`：删除当前选中对象
 
 ## 数据与嵌入

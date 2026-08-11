@@ -105,6 +105,7 @@ it("falls back to the active camera panel in camera mode when nothing is selecte
     ...useDirectorStore.getState(),
     viewMode: "camera",
     selectedObjectId: null,
+    selectedObjectIds: [],
   });
 
   render(<RightPanel />);

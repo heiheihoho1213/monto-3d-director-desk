@@ -311,6 +311,7 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
     function handleKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || isEditableShortcutTarget(event.target)) return;
       if (!event.metaKey && !event.ctrlKey) return;
+      if (useDirectorStore.getState().viewMode !== "director") return;
 
       const key = event.key.toLowerCase();
       if (key === "c") {
@@ -325,9 +326,13 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
         return;
       }
 
-      if (key === "z" && !event.shiftKey) {
+      if (key === "z") {
         event.preventDefault();
-        useDirectorStore.getState().undo();
+        if (event.shiftKey) {
+          useDirectorStore.getState().redo();
+        } else {
+          useDirectorStore.getState().undo();
+        }
       }
     }
 
