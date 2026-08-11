@@ -265,7 +265,6 @@ export function CharacterPanel() {
               {
                 axis: "X",
                 ariaLabel: "角色缩放 X",
-                step: "0.01",
                 value: transform.scale[0],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -279,7 +278,6 @@ export function CharacterPanel() {
               {
                 axis: "Y",
                 ariaLabel: "角色缩放 Y",
-                step: "0.01",
                 value: transform.scale[1],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -293,7 +291,6 @@ export function CharacterPanel() {
               {
                 axis: "Z",
                 ariaLabel: "角色缩放 Z",
-                step: "0.01",
                 value: transform.scale[2],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -312,7 +309,7 @@ export function CharacterPanel() {
             numberAriaLabel="角色统一缩放"
             max="3"
             min="0.2"
-            step="0.01"
+            step="0.1"
             value={transform.scale[0]}
             onValueChange={(value) =>
               isCrowd && selection.crowdId

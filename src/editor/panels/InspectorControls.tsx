@@ -68,6 +68,7 @@ type OptionElementProps = {
 };
 
 const AXIS_DRAG_PIXELS_PER_STEP = 10;
+const DEFAULT_AXIS_STEP = "0.1";
 
 function parseFiniteNumber(value: FieldValue | undefined) {
   const parsed = Number(value);
@@ -334,13 +335,14 @@ function InspectorAxisInput({ control }: { control: AxisControl }) {
   const [isDragging, setIsDragging] = useState(false);
   const cleanupDragRef = useRef<(() => void) | null>(null);
   const { beginInteraction, endInteraction } = useUndoBatchInteraction();
+  const axisStep = control.step ?? DEFAULT_AXIS_STEP;
 
   useEffect(() => () => cleanupDragRef.current?.(), []);
 
   function applyDeltaFromValue(deltaSteps: number, value: FieldValue) {
-    const step = parseStep(control.step);
+    const step = parseStep(axisStep);
     const startValue = parseFiniteNumber(value) ?? 0;
-    const precision = Math.max(decimalPlaces(control.step), decimalPlaces(value));
+    const precision = Math.max(decimalPlaces(axisStep), decimalPlaces(value));
     const nextValue = clampValue(startValue + deltaSteps * step, control.min, control.max);
     control.onChange(formatDraggedValue(nextValue, precision));
   }
@@ -357,8 +359,8 @@ function InspectorAxisInput({ control }: { control: AxisControl }) {
 
     const startX = event.clientX;
     const startValue = parseFiniteNumber(control.value) ?? 0;
-    const step = parseStep(control.step);
-    const precision = Math.max(decimalPlaces(control.step), decimalPlaces(control.value));
+    const step = parseStep(axisStep);
+    const precision = Math.max(decimalPlaces(axisStep), decimalPlaces(control.value));
     let previousValue = formatDraggedValue(startValue, precision);
 
     const handleMouseMove = (moveEvent: globalThis.MouseEvent) => {
@@ -398,6 +400,15 @@ function InspectorAxisInput({ control }: { control: AxisControl }) {
     }
   }
 
+  function handleValueKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") {
+      return;
+    }
+
+    event.preventDefault();
+    applyDeltaFromValue(event.key === "ArrowUp" ? 1 : -1, control.value);
+  }
+
   return (
     <div className={`inspector-axis-input${isDragging ? " is-dragging" : ""}`}>
       <button
@@ -414,10 +425,11 @@ function InspectorAxisInput({ control }: { control: AxisControl }) {
         className="inspector-axis-value"
         max={control.max}
         min={control.min}
-        step={control.step}
+        step={axisStep}
         type="number"
         value={control.value}
         onChange={(event) => control.onChange(event.currentTarget.value)}
+        onKeyDown={handleValueKeyDown}
         onBlur={endInteraction}
         onFocus={beginInteraction}
       />
