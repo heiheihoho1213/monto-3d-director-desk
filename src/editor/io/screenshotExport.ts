@@ -34,11 +34,44 @@ export function buildCaptureFileName(result: ScreenshotResult, index = 0) {
 }
 
 export function downloadDataUrl(dataUrl: ScreenshotDataUrl, fileName: string) {
-  const anchor = document.createElement("a");
-  anchor.href = dataUrl;
-  anchor.download = fileName;
-  anchor.rel = "noopener";
-  anchor.click();
+  // If we have a base64 Data URL, we can download directly.
+  // If we have a remote URL (e.g. provided by host `uploadCaptures`), we must fetch it first,
+  // otherwise some browsers will treat it as a normal navigation (current-tab open).
+  const isDataUrl = typeof dataUrl === "string" && dataUrl.startsWith("data:image/");
+
+  if (isDataUrl) {
+    const anchor = document.createElement("a");
+    anchor.href = dataUrl;
+    anchor.download = fileName;
+    anchor.rel = "noopener";
+    anchor.click();
+    return;
+  }
+
+  // Remote URL case: fetch -> blob -> download.
+  // Note: If the upstream doesn't support CORS, fetch may fail; we keep a best-effort fallback.
+  void (async () => {
+    try {
+      const res = await fetch(dataUrl);
+      if (!res.ok) {
+        throw new Error(`Failed to download: ${res.status}`);
+      }
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const anchor = document.createElement("a");
+      anchor.href = blobUrl;
+      anchor.download = fileName;
+      anchor.rel = "noopener";
+      anchor.click();
+
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      // If fetching fails, we cannot safely force a download (the browser may navigate instead).
+      // Intentionally do NOT click a remote URL href here to avoid opening "haitong" in the tab.
+      // Consumers can handle error UI if needed.
+    }
+  })();
 }
 
 export function downloadCaptureResults(results: ScreenshotResult[]) {
