@@ -24,4 +24,28 @@ describe("i18n translator", () => {
     const t = createTranslator("en");
     expect(t("chrome.title")).toBe("3D Director Desk");
   });
+
+  it("covers every mannequin pose preset id in both languages", async () => {
+    const { MANNEQUIN_POSE_PRESETS } = await import("../editor/presets/mannequinPosePresets");
+    const zh = createTranslator("zh");
+    const en = createTranslator("en");
+
+    for (const preset of MANNEQUIN_POSE_PRESETS) {
+      const key = preset.id.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+      const path = `pose.${key}`;
+      expect(zh(path), path).toBe(preset.label);
+      expect(en(path), path).not.toBe(path);
+      expect(en(path), path).not.toBe(preset.label);
+    }
+  });
+
+  it("translates pose control group labels", () => {
+    const zh = createTranslator("zh");
+    const en = createTranslator("en");
+    expect(zh("poseControl.body")).toBe("身体");
+    expect(en("poseControl.body")).toBe("Body");
+    expect(zh("poseControl.lean")).toBe("前倾");
+    expect(en("poseControl.lean")).toBe("Lean");
+    expect(en("poseControl.sliderAria", { group: "Body", label: "Lean" })).toBe("Body · Lean slider");
+  });
 });

@@ -82,78 +82,78 @@ export function CharacterPanel() {
   const isCrowd = selection.mode === "crowd";
   const poseGroups = [
     {
-      title: "身体",
+      title: t("poseControl.body"),
       controls: [
-        { key: "body.pitch", label: "前倾" },
-        { key: "body.yaw", label: "转身" },
-        { key: "body.roll", label: "侧倾" },
+        { key: "body.pitch", label: t("poseControl.lean") },
+        { key: "body.yaw", label: t("poseControl.turn") },
+        { key: "body.roll", label: t("poseControl.sideLean") },
       ],
     },
     {
-      title: "躯干",
+      title: t("poseControl.torso"),
       controls: [
-        { key: "torso.pitch", label: "前倾" },
-        { key: "torso.yaw", label: "扭转" },
-        { key: "torso.roll", label: "侧倾" },
+        { key: "torso.pitch", label: t("poseControl.lean") },
+        { key: "torso.yaw", label: t("poseControl.twist") },
+        { key: "torso.roll", label: t("poseControl.sideLean") },
       ],
     },
     {
-      title: "头部",
+      title: t("poseControl.head"),
       controls: [
-        { key: "head.pitch", label: "点头" },
-        { key: "head.yaw", label: "转头" },
-        { key: "head.roll", label: "歪头" },
+        { key: "head.pitch", label: t("poseControl.nod") },
+        { key: "head.yaw", label: t("poseControl.headTurn") },
+        { key: "head.roll", label: t("poseControl.headTilt") },
       ],
     },
     {
-      title: "左肩",
+      title: t("poseControl.leftShoulder"),
       controls: [
-        { key: "leftShoulder.pitch", label: "前举" },
-        { key: "leftShoulder.spread", label: "外展" },
-        { key: "leftShoulder.twist", label: "扭转" },
+        { key: "leftShoulder.pitch", label: t("poseControl.raise") },
+        { key: "leftShoulder.spread", label: t("poseControl.spread") },
+        { key: "leftShoulder.twist", label: t("poseControl.twist") },
       ],
     },
     {
-      title: "右肩",
+      title: t("poseControl.rightShoulder"),
       controls: [
-        { key: "rightShoulder.pitch", label: "前举" },
-        { key: "rightShoulder.spread", label: "外展" },
-        { key: "rightShoulder.twist", label: "扭转" },
+        { key: "rightShoulder.pitch", label: t("poseControl.raise") },
+        { key: "rightShoulder.spread", label: t("poseControl.spread") },
+        { key: "rightShoulder.twist", label: t("poseControl.twist") },
       ],
     },
     {
-      title: "左肘",
-      controls: [{ key: "leftElbow.bend", label: "弯曲" }],
+      title: t("poseControl.leftElbow"),
+      controls: [{ key: "leftElbow.bend", label: t("poseControl.bend") }],
     },
     {
-      title: "右肘",
-      controls: [{ key: "rightElbow.bend", label: "弯曲" }],
+      title: t("poseControl.rightElbow"),
+      controls: [{ key: "rightElbow.bend", label: t("poseControl.bend") }],
     },
     {
-      title: "左髋",
+      title: t("poseControl.leftHip"),
       controls: [
-        { key: "leftHip.pitch", label: "前抬" },
-        { key: "leftHip.spread", label: "外展" },
-        { key: "leftHip.twist", label: "扭转" },
+        { key: "leftHip.pitch", label: t("poseControl.lift") },
+        { key: "leftHip.spread", label: t("poseControl.spread") },
+        { key: "leftHip.twist", label: t("poseControl.twist") },
       ],
     },
     {
-      title: "右髋",
+      title: t("poseControl.rightHip"),
       controls: [
-        { key: "rightHip.pitch", label: "前抬" },
-        { key: "rightHip.spread", label: "外展" },
-        { key: "rightHip.twist", label: "扭转" },
+        { key: "rightHip.pitch", label: t("poseControl.lift") },
+        { key: "rightHip.spread", label: t("poseControl.spread") },
+        { key: "rightHip.twist", label: t("poseControl.twist") },
       ],
     },
     {
-      title: "左膝",
-      controls: [{ key: "leftKnee.bend", label: "弯曲" }],
+      title: t("poseControl.leftKnee"),
+      controls: [{ key: "leftKnee.bend", label: t("poseControl.bend") }],
     },
     {
-      title: "右膝",
-      controls: [{ key: "rightKnee.bend", label: "弯曲" }],
+      title: t("poseControl.rightKnee"),
+      controls: [{ key: "rightKnee.bend", label: t("poseControl.bend") }],
     },
-  ] as const;
+  ];
 
   return (
     <InspectorPanel
@@ -368,8 +368,8 @@ export function CharacterPanel() {
                         <InspectorRangeNumberField
                           key={control.key}
                           label={control.label}
-                          rangeAriaLabel={`${group.title} · ${control.label} 滑杆`}
-                          numberAriaLabel={`${group.title} · ${control.label}`}
+                          rangeAriaLabel={t("poseControl.sliderAria", { group: group.title, label: control.label })}
+                          numberAriaLabel={t("poseControl.valueAria", { group: group.title, label: control.label })}
                           max="90"
                           min="-90"
                           step="1"
