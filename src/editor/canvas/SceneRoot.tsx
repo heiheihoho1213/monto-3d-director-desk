@@ -1,7 +1,18 @@
 import { Html, Line, TransformControls, type TransformControlsProps } from "@react-three/drei";
 import { useLoader, type ThreeEvent } from "@react-three/fiber";
 import { Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Box3, Matrix4, Quaternion, Vector3, type Group, type Object3D } from "three";
+import {
+  Box3,
+  Color,
+  Matrix4,
+  Mesh,
+  MeshStandardMaterial,
+  Quaternion,
+  Vector3,
+  type Group,
+  type Material,
+  type Object3D,
+} from "three";
 import type { TransformControls as TransformControlsImpl } from "three-stdlib";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
@@ -338,7 +349,52 @@ export function getViewportCameraHitArea(): CameraHitArea {
   };
 }
 
-function NormalizedImportedObject({ object }: { object: Object3D }) {
+function cloneMaterialInstance(material: Material | Material[]) {
+  return Array.isArray(material) ? material.map((item) => item.clone()) : material.clone();
+}
+
+function tintImportedMaterial(material: Material | Material[], color: string) {
+  const materials = Array.isArray(material) ? material : [material];
+  const nextColor = new Color(color);
+
+  materials.forEach((item) => {
+    if ("color" in item && item.color instanceof Color) {
+      item.color.copy(nextColor);
+      item.needsUpdate = true;
+    }
+  });
+}
+
+export function isolateAndTintImportedModelMaterials(root: Object3D, color: string) {
+  root.traverse((object) => {
+    if (!(object instanceof Mesh)) return;
+
+    if (!object.material) {
+      object.material = new MeshStandardMaterial({
+        color,
+        metalness: 0.02,
+        roughness: 0.68,
+      });
+      object.userData.storyAiIsolatedImportedMaterial = true;
+      return;
+    }
+
+    if (!object.userData.storyAiIsolatedImportedMaterial) {
+      object.material = cloneMaterialInstance(object.material);
+      object.userData.storyAiIsolatedImportedMaterial = true;
+    }
+
+    tintImportedMaterial(object.material, color);
+  });
+}
+
+function NormalizedImportedObject({
+  color = "#d7e7ff",
+  object,
+}: {
+  color?: string;
+  object: Object3D;
+}) {
   const { clone, normalization } = useMemo(() => {
     const clonedObject = object.clone(true);
     clonedObject.updateMatrixWorld(true);
@@ -348,6 +404,10 @@ function NormalizedImportedObject({ object }: { object: Object3D }) {
       normalization: getImportedModelNormalization(new Box3().setFromObject(clonedObject)),
     };
   }, [object]);
+
+  useLayoutEffect(() => {
+    isolateAndTintImportedModelMaterials(clone, color);
+  }, [clone, color]);
 
   return (
     <group
@@ -359,27 +419,29 @@ function NormalizedImportedObject({ object }: { object: Object3D }) {
   );
 }
 
-function FbxModel({ url }: { url: string }) {
+function FbxModel({ color, url }: { color?: string; url: string }) {
   const object = useLoader(FBXLoader, url);
 
-  return <NormalizedImportedObject object={object} />;
+  return <NormalizedImportedObject color={color} object={object} />;
 }
 
-function ObjModel({ url }: { url: string }) {
+function ObjModel({ color, url }: { color?: string; url: string }) {
   const object = useLoader(OBJLoader, url);
 
-  return <NormalizedImportedObject object={object} />;
+  return <NormalizedImportedObject color={color} object={object} />;
 }
 
 function ImportedModel({
+  color,
   fileName,
   url,
 }: {
+  color?: string;
   fileName: string;
   url: string;
 }) {
-  if (/\.fbx$/i.test(fileName)) return <FbxModel url={url} />;
-  if (/\.obj$/i.test(fileName)) return <ObjModel url={url} />;
+  if (/\.fbx$/i.test(fileName)) return <FbxModel color={color} url={url} />;
+  if (/\.obj$/i.test(fileName)) return <ObjModel color={color} url={url} />;
   return null;
 }
 
@@ -522,7 +584,7 @@ function ObjectSceneNode({
     >
       {isImportedModel && asset ? (
         <Suspense fallback={null}>
-          <ImportedModel fileName={asset.fileName} url={asset.url} />
+          <ImportedModel color={item.color} fileName={asset.fileName} url={asset.url} />
         </Suspense>
       ) : item.kind === "character" ? (
         <>
