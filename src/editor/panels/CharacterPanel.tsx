@@ -7,6 +7,7 @@ import {
   InspectorTextField,
   InspectorSection,
 } from "./InspectorControls";
+import { useT, type Translator } from "../../i18n";
 import { MANNEQUIN_POSE_PRESETS } from "../presets/mannequinPosePresets";
 import { getCrowdAnchorTransform, useDirectorStore } from "../store/directorStore";
 
@@ -14,7 +15,15 @@ function replaceAxis(tuple: [number, number, number], axis: 0 | 1 | 2, value: nu
   return tuple.map((item, index) => (index === axis ? value : item)) as [number, number, number];
 }
 
+function posePresetLabel(t: Translator, id: string, fallback: string) {
+  const key = id.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+  const path = `pose.${key}`;
+  const translated = t(path);
+  return translated === path ? fallback : translated;
+}
+
 export function CharacterPanel() {
+  const t = useT();
   const [activeTab, setActiveTab] = useState<"properties" | "pose">("properties");
   const selectedCrowdId = useDirectorStore((state) => state.selectedCrowdId);
   const selectedObjectId = useDirectorStore((state) => state.selectedObjectId);
@@ -46,7 +55,7 @@ export function CharacterPanel() {
           crowdMembers,
           crowdAnchor,
           role: crowdMembers[crowdMembers.length - 1] ?? crowdMembers[0],
-          name: crowdMembers[0]?.crowdLabel ?? "群众",
+          name: crowdMembers[0]?.crowdLabel ?? t("objectTree.crowds"),
           color: crowdMembers[0]?.color ?? "#4F8EF7",
         };
       }
@@ -63,7 +72,7 @@ export function CharacterPanel() {
       name: role.name,
       color: role.color ?? "#4F8EF7",
     };
-  }, [objects, selectedCrowdId, selectedObjectId]);
+  }, [objects, selectedCrowdId, selectedObjectId, t]);
 
   if (!selection) return null;
 
@@ -148,19 +157,19 @@ export function CharacterPanel() {
 
   return (
     <InspectorPanel
-      title="角色"
-      ariaLabel="角色右侧属性面板"
+      title={t("character.title")}
+      ariaLabel={t("character.aria")}
       className="character-inspector"
       tabs={[
-        { label: "属性", active: activeTab === "properties", onClick: () => setActiveTab("properties") },
-        { label: "姿势", active: activeTab === "pose", onClick: () => setActiveTab("pose") },
+        { label: t("common.properties"), active: activeTab === "properties", onClick: () => setActiveTab("properties") },
+        { label: t("common.pose"), active: activeTab === "pose", onClick: () => setActiveTab("pose") },
       ]}
     >
       {activeTab === "properties" ? (
         <>
           <InspectorTextField
-            label="名称"
-            ariaLabel="角色名称"
+            label={t("common.name")}
+            ariaLabel={t("character.name")}
             value={selection.name}
             onChange={(value) => {
               if (isCrowd && selection.crowdId) {
@@ -172,11 +181,11 @@ export function CharacterPanel() {
             }}
           />
           <InspectorAxisGroup
-            label="位置"
+            label={t("common.position")}
             axes={[
               {
                 axis: "X",
-                ariaLabel: "角色位置 X",
+                ariaLabel: t("character.posX"),
                 value: transform.position[0],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -189,7 +198,7 @@ export function CharacterPanel() {
               },
               {
                 axis: "Y",
-                ariaLabel: "角色位置 Y",
+                ariaLabel: t("character.posY"),
                 value: transform.position[1],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -202,7 +211,7 @@ export function CharacterPanel() {
               },
               {
                 axis: "Z",
-                ariaLabel: "角色位置 Z",
+                ariaLabel: t("character.posZ"),
                 value: transform.position[2],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -216,11 +225,11 @@ export function CharacterPanel() {
             ]}
           />
           <InspectorAxisGroup
-            label="旋转"
+            label={t("common.rotation")}
             axes={[
               {
                 axis: "X",
-                ariaLabel: "角色旋转 X",
+                ariaLabel: t("character.rotX"),
                 value: transform.rotation[0],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -233,7 +242,7 @@ export function CharacterPanel() {
               },
               {
                 axis: "Y",
-                ariaLabel: "角色旋转 Y",
+                ariaLabel: t("character.rotY"),
                 value: transform.rotation[1],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -246,7 +255,7 @@ export function CharacterPanel() {
               },
               {
                 axis: "Z",
-                ariaLabel: "角色旋转 Z",
+                ariaLabel: t("character.rotZ"),
                 value: transform.rotation[2],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -260,11 +269,11 @@ export function CharacterPanel() {
             ]}
           />
           <InspectorAxisGroup
-            label="缩放"
+            label={t("common.scale")}
             axes={[
               {
                 axis: "X",
-                ariaLabel: "角色缩放 X",
+                ariaLabel: t("character.scaleX"),
                 value: transform.scale[0],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -277,7 +286,7 @@ export function CharacterPanel() {
               },
               {
                 axis: "Y",
-                ariaLabel: "角色缩放 Y",
+                ariaLabel: t("character.scaleY"),
                 value: transform.scale[1],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -290,7 +299,7 @@ export function CharacterPanel() {
               },
               {
                 axis: "Z",
-                ariaLabel: "角色缩放 Z",
+                ariaLabel: t("character.scaleZ"),
                 value: transform.scale[2],
                 onChange: (value) =>
                   isCrowd && selection.crowdId
@@ -304,9 +313,9 @@ export function CharacterPanel() {
             ]}
           />
           <InspectorRangeNumberField
-            label="统一缩放"
-            rangeAriaLabel="角色统一缩放滑杆"
-            numberAriaLabel="角色统一缩放"
+            label={t("common.uniformScale")}
+            rangeAriaLabel={t("character.uniformScaleSlider")}
+            numberAriaLabel={t("character.uniformScale")}
             max="3"
             min="0.2"
             step="0.1"
@@ -318,9 +327,9 @@ export function CharacterPanel() {
             }
           />
           <InspectorColorField
-            label="颜色"
-            colorAriaLabel="角色颜色"
-            hexAriaLabel="角色颜色 HEX"
+            label={t("common.color")}
+            colorAriaLabel={t("character.color")}
+            hexAriaLabel={t("character.colorHex")}
             value={roleColor}
             onColorChange={(value) =>
               isCrowd && selection.crowdId ? updateCrowdColor(selection.crowdId, value) : updateObjectColor(role.id, value)
@@ -331,7 +340,7 @@ export function CharacterPanel() {
           />
         </>
       ) : (
-        <InspectorSection title="姿势预设" className="pose-preset-section">
+        <InspectorSection title={t("character.posePresets")} className="pose-preset-section">
           {role.characterRig ? (
             <>
               <div className="preset-grid">
@@ -346,11 +355,11 @@ export function CharacterPanel() {
                         : applyPosePreset(role.id, preset.id)
                     }
                   >
-                    {preset.label}
+                    {posePresetLabel(t, preset.id, preset.label)}
                   </button>
                 ))}
               </div>
-              <InspectorSection title="姿势调节" className="pose-adjust-section">
+              <InspectorSection title={t("character.poseAdjust")} className="pose-adjust-section">
                 <div className="pose-groups">
                   {poseGroups.map((group) => (
                     <section key={group.title} className="pose-group">
@@ -378,7 +387,7 @@ export function CharacterPanel() {
               </InspectorSection>
             </>
           ) : (
-            <p>该模型未识别到标准 humanoid 骨骼，暂不支持姿势编辑。</p>
+            <p>{t("character.poseUnsupported")}</p>
           )}
         </InspectorSection>
       )}

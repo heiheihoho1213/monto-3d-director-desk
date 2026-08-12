@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { Box, Camera, ChevronDown, ChevronRight, Eye, EyeOff, Lock, Search, Unlock, User, Users } from "lucide-react";
-import type { DirectorObject, DirectorObjectKind } from "../schema/directorProject";
+import { useT } from "../../i18n";
+import type { DirectorObject } from "../schema/directorProject";
 import { resolveSelectedObjectIds } from "../store/directorSelectors";
 import { useDirectorStore } from "../store/directorStore";
 
@@ -22,17 +23,6 @@ type SceneTreeItem = {
 
 type ObjectTreeIconKind = "character" | "crowd" | "geometry" | "model" | "camera";
 
-const GROUP_LABELS: Array<{
-  key: string;
-  title: string;
-}> = [
-  { key: "characters", title: "角色" },
-  { key: "crowd", title: "群众" },
-  { key: "geometry", title: "几何体" },
-  { key: "my-models", title: "我的模型" },
-  { key: "cameras", title: "摄像机" },
-];
-
 function ObjectKindIcon({ icon }: { icon: ObjectTreeIconKind }) {
   const iconProps = { "aria-hidden": true, size: 16, strokeWidth: 1.8 } as const;
 
@@ -53,6 +43,7 @@ function isEditableKeyboardTarget(target: EventTarget | null) {
 }
 
 export function ObjectTreePanel() {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [expandedCrowdIds, setExpandedCrowdIds] = useState<string[]>([]);
   const assets = useDirectorStore((state) => state.project.assets);
@@ -71,6 +62,17 @@ export function ObjectTreePanel() {
   const toggleObjectVisible = useDirectorStore((state) => state.toggleObjectVisible);
   const toggleObjectLocked = useDirectorStore((state) => state.toggleObjectLocked);
   const deleteSelectedObject = useDirectorStore((state) => state.deleteSelectedObject);
+
+  const groupLabels = useMemo(
+    () => [
+      { key: "characters", title: t("objectTree.characters") },
+      { key: "crowd", title: t("objectTree.crowds") },
+      { key: "geometry", title: t("objectTree.geometry") },
+      { key: "my-models", title: t("objectTree.myModels") },
+      { key: "cameras", title: t("objectTree.cameras") },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -171,7 +173,7 @@ export function ObjectTreePanel() {
     setExpandedCrowdIds((current) => current.filter((crowdId) => crowdIds.has(crowdId)));
   }, [groupedItems.crowd]);
 
-  const filteredGroups = GROUP_LABELS.map((group) => {
+  const filteredGroups = groupLabels.map((group) => {
     const itemsByGroup =
       group.key === "characters"
         ? groupedItems.characters
@@ -287,28 +289,33 @@ export function ObjectTreePanel() {
 
   return (
     <section className="panel-card object-tree-panel">
-      <h2 className="visually-hidden">场景对象</h2>
+      <h2 className="visually-hidden">{t("objectTree.title")}</h2>
       <label className="object-search-field">
         <Search aria-hidden="true" size={16} strokeWidth={1.8} />
         <input
           className="ui-field"
-          aria-label="搜索场景内容"
+          aria-label={t("objectTree.searchAria")}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="请输入搜索内容"
+          placeholder={t("objectTree.searchPlaceholder")}
         />
       </label>
       {hasEmptySearchResult ? (
-        <div className="object-search-empty-state" role="status" aria-label="未搜索到内容">
+        <div className="object-search-empty-state" role="status" aria-label={t("objectTree.searchEmpty")}>
           <span className="object-search-empty-icon" data-testid="object-search-empty-icon">
             <Search aria-hidden="true" size={16} strokeWidth={1.8} />
           </span>
-          <span>未搜索到内容</span>
+          <span>{t("objectTree.searchEmpty")}</span>
         </div>
       ) : (
-        <div className="object-tree-groups" role="tree" aria-label="场景对象列表">
+        <div className="object-tree-groups" role="tree" aria-label={t("objectTree.listAria")}>
           {filteredGroups.map((group) => (
-            <section key={group.key} className="object-tree-group" role="group" aria-label={`${group.title}分组`}>
+            <section
+              key={group.key}
+              className="object-tree-group"
+              role="group"
+              aria-label={t("objectTree.groupAria", { title: group.title })}
+            >
               <h3>{group.title}</h3>
               <ul className="object-list">
                 {group.items.map((item) => {
@@ -332,7 +339,11 @@ export function ObjectTreePanel() {
                         <div className="object-row-main">
                           {item.crowdId ? (
                             <button
-                              aria-label={`${expanded ? "收起" : "展开"} ${item.name}`}
+                              aria-label={
+                                expanded
+                                  ? t("objectTree.collapse", { name: item.name })
+                                  : t("objectTree.expand", { name: item.name })
+                              }
                               className="object-row-toggle-button"
                               type="button"
                               onClick={(event) => {
@@ -357,7 +368,7 @@ export function ObjectTreePanel() {
                             <button
                               className="object-flag-button object-icon-flag-button"
                               type="button"
-                              aria-label={`${item.name} 可见性`}
+                              aria-label={t("objectTree.visibility", { name: item.name })}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 toggleObjectVisible(item.id);
@@ -372,7 +383,7 @@ export function ObjectTreePanel() {
                             <button
                               className="object-flag-button object-icon-flag-button"
                               type="button"
-                              aria-label={`${item.name} 锁定`}
+                              aria-label={t("objectTree.lock", { name: item.name })}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 toggleObjectLocked(item.id);
@@ -388,7 +399,10 @@ export function ObjectTreePanel() {
                         ) : null}
                       </div>
                       {item.crowdId && expanded && item.previewChildren?.length ? (
-                        <ul className="object-crowd-preview-list" aria-label={`${item.name} 成员预览`}>
+                        <ul
+                          className="object-crowd-preview-list"
+                          aria-label={t("objectTree.membersPreview", { name: item.name })}
+                        >
                           {item.previewChildren.map((child) => (
                             <li key={child.id}>
                               <div className={`object-row object-row-preview${selected ? " is-selected" : ""}`}>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, ImageOff, Trash2 } from "lucide-react";
+import { useT } from "../../i18n";
 import {
   InspectorAxisGroup,
   InspectorColorField,
@@ -27,6 +28,7 @@ function clampNumber(value: number, min: number, max: number) {
 }
 
 export function ScenePanel() {
+  const t = useT();
   const scene = useDirectorStore((state) => state.project.scene);
   const assets = useDirectorStore((state) => state.project.assets);
   const panoramaAssetId = useDirectorStore((state) => state.project.panoramaAssetId);
@@ -40,7 +42,6 @@ export function ScenePanel() {
   const [panoramaRadiusDraft, setPanoramaRadiusDraft] = useState(String(scene.panoramaRadius));
   const [groundHeightDraft, setGroundHeightDraft] = useState(String(scene.groundHeight));
   const panoramaAsset = assets.find((item) => item.id === panoramaAssetId);
-  const clampedPanoramaRadius = clampNumber(scene.panoramaRadius, PANORAMA_RADIUS_MIN, PANORAMA_RADIUS_MAX);
 
   useEffect(() => {
     setSceneScaleDraft(String(scene.scale));
@@ -89,11 +90,11 @@ export function ScenePanel() {
   }
 
   return (
-    <InspectorPanel title="3D场景" ariaLabel="3D场景右侧属性面板" className="scene-inspector">
+    <InspectorPanel title={t("scene.title")} ariaLabel={t("scene.aria")} className="scene-inspector">
       <InspectorRangeNumberField
-        label="场景缩放"
-        rangeAriaLabel="场景缩放滑杆"
-        numberAriaLabel="场景缩放"
+        label={t("scene.sceneScale")}
+        rangeAriaLabel={t("scene.sceneScaleSlider")}
+        numberAriaLabel={t("scene.sceneScale")}
         max={SCENE_SCALE_MAX}
         min={SCENE_SCALE_MIN}
         step="0.01"
@@ -112,25 +113,25 @@ export function ScenePanel() {
         }}
       />
       <InspectorAxisGroup
-        label="场景平移"
+        label={t("scene.sceneTranslate")}
         axes={[
           {
             axis: "X",
-            ariaLabel: "场景平移 X",
+            ariaLabel: t("scene.axisX"),
             step: "0.1",
             value: scene.position[0],
             onChange: (value) => updateScene({ position: replaceAxis(scene.position, 0, Number(value)) }),
           },
           {
             axis: "Y",
-            ariaLabel: "场景平移 Y",
+            ariaLabel: t("scene.axisY"),
             step: "0.1",
             value: scene.position[1],
             onChange: (value) => updateScene({ position: replaceAxis(scene.position, 1, Number(value)) }),
           },
           {
             axis: "Z",
-            ariaLabel: "场景平移 Z",
+            ariaLabel: t("scene.axisZ"),
             step: "0.1",
             value: scene.position[2],
             onChange: (value) => updateScene({ position: replaceAxis(scene.position, 2, Number(value)) }),
@@ -138,37 +139,37 @@ export function ScenePanel() {
         ]}
       />
       <InspectorAxisGroup
-        label="场景旋转"
+        label={t("scene.sceneRotate")}
         axes={[
           {
             axis: "X",
-            ariaLabel: "场景旋转 X",
+            ariaLabel: t("scene.rotX"),
             value: scene.rotation[0],
             onChange: (value) => updateScene({ rotation: replaceAxis(scene.rotation, 0, Number(value)) }),
           },
           {
             axis: "Y",
-            ariaLabel: "场景旋转 Y",
+            ariaLabel: t("scene.rotY"),
             value: scene.rotation[1],
             onChange: (value) => updateScene({ rotation: replaceAxis(scene.rotation, 1, Number(value)) }),
           },
           {
             axis: "Z",
-            ariaLabel: "场景旋转 Z",
+            ariaLabel: t("scene.rotZ"),
             value: scene.rotation[2],
             onChange: (value) => updateScene({ rotation: replaceAxis(scene.rotation, 2, Number(value)) }),
           },
         ]}
       />
       <InspectorSection
-        title="全景背景"
+        title={t("scene.panorama")}
         titleAccessory={
           panoramaAsset ? (
             <button
-              aria-label={panoramaPreviewVisible ? "隐藏全景图预览" : "显示全景图预览"}
+              aria-label={panoramaPreviewVisible ? t("scene.panoramaHide") : t("scene.panoramaShow")}
               aria-pressed={panoramaPreviewVisible}
               className="inspector-section-eye-button"
-              title={panoramaPreviewVisible ? "临时隐藏全景图" : "显示全景图"}
+              title={panoramaPreviewVisible ? t("scene.panoramaHideTitle") : t("scene.panoramaShowTitle")}
               type="button"
               onClick={() => togglePanoramaPreviewVisible()}
             >
@@ -184,11 +185,11 @@ export function ScenePanel() {
         {panoramaAsset ? (
           <div
             className={`panorama-thumbnail-card${panoramaPreviewVisible ? "" : " is-preview-hidden"}`}
-            aria-label="全景图缩略图卡片"
+            aria-label={t("scene.panoramaThumbCard")}
           >
             {panoramaImportLocked ? null : (
               <button
-                aria-label="删除全景图"
+                aria-label={t("scene.removePanorama")}
                 className="panorama-thumbnail-delete"
                 type="button"
                 onClick={() => removePanoramaAsset()}
@@ -196,31 +197,35 @@ export function ScenePanel() {
                 <Trash2 aria-hidden="true" size={14} strokeWidth={1.9} />
               </button>
             )}
-            <img className="panorama-thumbnail-image" alt={`${panoramaAsset.fileName} 全景图缩略图`} src={panoramaAsset.url} />
+            <img
+              className="panorama-thumbnail-image"
+              alt={t("scene.panoramaThumbAlt", { name: panoramaAsset.fileName })}
+              src={panoramaAsset.url}
+            />
             <span className="panorama-thumbnail-name">{panoramaAsset.fileName}</span>
           </div>
         ) : (
-          <div className="panorama-empty-card" aria-label="全景图连接状态">
+          <div className="panorama-empty-card" aria-label={t("scene.panoramaStatus")}>
             <span className="panorama-empty-icon" data-testid="panorama-empty-icon">
               <ImageOff aria-hidden="true" size={16} strokeWidth={1.8} />
             </span>
-            <span>未连接全景图</span>
+            <span>{t("scene.panoramaEmpty")}</span>
           </div>
         )}
         <InspectorColorField
-          label="天空颜色"
-          colorAriaLabel="天空颜色"
-          hexAriaLabel="天空颜色 HEX"
+          label={t("scene.skyColor")}
+          colorAriaLabel={t("scene.skyColor")}
+          hexAriaLabel={t("scene.skyColorHex")}
           value={scene.backgroundColor}
           onColorChange={(value) => updateScene({ backgroundColor: value })}
           onHexChange={(value) => updateScene({ backgroundColor: value })}
         />
       </InspectorSection>
-      <InspectorSection title="全景球">
+      <InspectorSection title={t("scene.panoramaSphere")}>
         <InspectorRangeNumberField
-          label="水平旋转"
-          rangeAriaLabel="全景球水平旋转滑杆"
-          numberAriaLabel="全景球水平旋转"
+          label={t("scene.panoramaYaw")}
+          rangeAriaLabel={t("scene.panoramaYawSlider")}
+          numberAriaLabel={t("scene.panoramaYawValue")}
           max={PANORAMA_YAW_MAX}
           min={PANORAMA_YAW_MIN}
           step="1"
@@ -239,9 +244,9 @@ export function ScenePanel() {
           }}
         />
         <InspectorRangeNumberField
-          label="球形半径"
-          rangeAriaLabel="全景球半径滑杆"
-          numberAriaLabel="全景球半径"
+          label={t("scene.panoramaRadius")}
+          rangeAriaLabel={t("scene.panoramaRadiusSlider")}
+          numberAriaLabel={t("scene.panoramaRadiusValue")}
           max={PANORAMA_RADIUS_MAX}
           min={PANORAMA_RADIUS_MIN}
           step="1"
@@ -260,43 +265,43 @@ export function ScenePanel() {
           }}
         />
       </InspectorSection>
-      <InspectorSection title="开关项">
-        <div className="scene-switch-row" role="group" aria-label="开关项设置">
+      <InspectorSection title={t("scene.helpers")}>
+        <div className="scene-switch-row" role="group" aria-label={t("scene.helpersAria")}>
           <div className="inspector-toggle-row">
             <input
-              aria-label="角色标签"
+              aria-label={t("scene.showLabels")}
               checked={scene.showLabels}
               type="checkbox"
               onChange={(event) => updateScene({ showLabels: event.target.checked })}
             />
-            <span>角色标签</span>
+            <span>{t("scene.showLabels")}</span>
           </div>
           <div className="inspector-toggle-row">
             <input
-              aria-label="网格吸附"
+              aria-label={t("scene.snapToGrid")}
               checked={scene.snapToGrid}
               type="checkbox"
               onChange={(event) => updateScene({ snapToGrid: event.target.checked })}
             />
-            <span>网格吸附</span>
+            <span>{t("scene.snapToGrid")}</span>
           </div>
           <div className="inspector-toggle-row">
             <input
-              aria-label="地面"
+              aria-label={t("scene.showGround")}
               checked={scene.showGround}
               type="checkbox"
               onChange={(event) => updateScene({ showGround: event.target.checked })}
             />
-            <span>地面</span>
+            <span>{t("scene.showGround")}</span>
           </div>
         </div>
       </InspectorSection>
       {scene.showGround ? (
-        <InspectorSection title="地面">
+        <InspectorSection title={t("scene.ground")}>
           <InspectorRangeNumberField
-            label="透明度"
-            rangeAriaLabel="地面透明度滑杆"
-            numberAriaLabel="地面透明度"
+            label={t("scene.opacity")}
+            rangeAriaLabel={t("scene.opacitySlider")}
+            numberAriaLabel={t("scene.opacityValue")}
             max="1"
             min="0"
             step="0.01"
@@ -304,9 +309,9 @@ export function ScenePanel() {
             onValueChange={(value) => updateScene({ groundOpacity: Number(value) })}
           />
           <InspectorRangeNumberField
-            label="高度"
-            rangeAriaLabel="地面高度滑杆"
-            numberAriaLabel="地面高度"
+            label={t("scene.height")}
+            rangeAriaLabel={t("scene.heightSlider")}
+            numberAriaLabel={t("scene.heightValue")}
             max={GROUND_HEIGHT_MAX}
             min={GROUND_HEIGHT_MIN}
             step="0.1"

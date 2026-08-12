@@ -8,9 +8,16 @@ import {
   configureDirectorDeskHost,
   initDirectorDeskHostBridge,
 } from "./editor/io/hostBridge";
+import { ModelUploadProvider } from "./editor/io/modelUploadContext";
 import { createDirectorDeskHandle, type DirectorDeskHandle, type DirectorDeskImageDataUrl } from "./editor/io/directorDeskCaptureApi";
+import type { DirectorDeskUploadModel } from "./editor/loaders/localModelImport";
 import type { DirectorProject } from "./editor/schema/directorProject";
 import { useDirectorStore } from "./editor/store/directorStore";
+import { I18nProvider, useT, type DirectorDeskLang } from "./i18n";
+
+export type { DirectorDeskUploadModel } from "./editor/loaders/localModelImport";
+export type { DirectorDeskLang } from "./i18n";
+export { DIRECTOR_DESK_LANGS } from "./i18n";
 
 export type {
   DirectorDeskCapturePreset,
@@ -57,6 +64,8 @@ export interface DirectorDeskProps {
   /** Top-bar title; accepts a string or custom React nodes (e.g. host back button + label). */
   title?: ReactNode;
   theme?: DirectorDeskTheme;
+  /** UI language. Defaults to `zh`. */
+  lang?: DirectorDeskLang;
   /** Isolate localStorage scene persistence when embedding multiple desks. */
   instanceId?: string | null;
   /**
@@ -79,6 +88,13 @@ export interface DirectorDeskProps {
   onCapturesSent?: (captures: DirectorDeskCapture[]) => void;
   /** Fired (debounced) when the editable project content changes. */
   onChange?: (project: DirectorProject) => void;
+  /**
+   * Optional host uploader for local FBX/OBJ imports.
+   * Pass an async function (e.g. `export async function uploadModel(file) { ... return url }`).
+   * When provided, imported models store the returned URL in `project.assets[].url`
+   * instead of inlining a base64 Data URL (avoids oversized project payloads).
+   */
+  uploadModel?: DirectorDeskUploadModel;
 }
 
 function cloneProject(project: DirectorProject): DirectorProject {
@@ -99,8 +115,9 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
   {
     className,
     style,
-    title = "3D导演台",
+    title,
     theme = "dark",
+    lang = "zh",
     instanceId = null,
     initial = null,
     material = null,
@@ -111,6 +128,7 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
     onClose,
     onCapturesSent,
     onChange,
+    uploadModel,
   },
   ref
 ) {
@@ -353,20 +371,60 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
   const rootClassName = ["director-desk-root", "app-shell", className].filter(Boolean).join(" ");
 
   return (
-    <div className={rootClassName} data-theme={theme} style={style}>
+    <I18nProvider lang={lang}>
+      <ModelUploadProvider uploadModel={uploadModel ?? null}>
+        <DirectorDeskFrame
+          className={rootClassName}
+          style={style}
+          theme={theme}
+          title={title}
+          showCloseButton={showCloseButton}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          onClose={handleClose}
+        />
+      </ModelUploadProvider>
+    </I18nProvider>
+  );
+});
+
+function DirectorDeskFrame({
+  className,
+  style,
+  theme,
+  title,
+  showCloseButton,
+  viewMode,
+  setViewMode,
+  onClose,
+}: {
+  className: string;
+  style?: CSSProperties;
+  theme: DirectorDeskTheme;
+  title?: ReactNode;
+  showCloseButton: boolean;
+  viewMode: "director" | "camera";
+  setViewMode: (mode: "director" | "camera") => void;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const resolvedTitle = title ?? t("chrome.title");
+
+  return (
+    <div className={className} data-theme={theme} style={style}>
       <header className="top-bar">
         <div className="top-bar-left">
-          <div className="top-bar-title">{title}</div>
+          <div className="top-bar-title">{resolvedTitle}</div>
         </div>
         <div className="top-bar-center">
-          <div className="mode-toggle ui-segmented" role="group" aria-label="视角切换">
+          <div className="mode-toggle ui-segmented" role="group" aria-label={t("chrome.viewMode")}>
             <button
               className={`mode-toggle-button ui-segmented-item ${viewMode === "director" ? "ui-segmented-item-active" : ""}`}
               aria-pressed={viewMode === "director"}
               type="button"
               onClick={() => setViewMode("director")}
             >
-              导演视角
+              {t("chrome.directorView")}
             </button>
             <button
               className={`mode-toggle-button ui-segmented-item ${viewMode === "camera" ? "ui-segmented-item-active" : ""}`}
@@ -374,7 +432,7 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
               type="button"
               onClick={() => setViewMode("camera")}
             >
-              机位视角
+              {t("chrome.cameraView")}
             </button>
           </div>
         </div>
@@ -383,9 +441,9 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
             <button
               className="top-bar-action-button"
               type="button"
-              aria-label="关闭"
-              title="关闭"
-              onClick={handleClose}
+              aria-label={t("chrome.close")}
+              title={t("chrome.close")}
+              onClick={onClose}
             >
               <X aria-hidden="true" size={16} strokeWidth={1.8} />
             </button>
@@ -397,4 +455,4 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
       </DirectorDeskShell>
     </div>
   );
-});
+}

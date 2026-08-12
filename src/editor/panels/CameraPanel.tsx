@@ -1,6 +1,7 @@
 import { Camera, Download, Eye, Images, Send, Trash2, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "../../i18n";
 import {
   InspectorAxisGroup,
   InspectorPanel,
@@ -25,6 +26,7 @@ function replaceAxis(tuple: [number, number, number], axis: 0 | 1 | 2, value: nu
 }
 
 export function CameraPanel() {
+  const t = useT();
   const [activeTab, setActiveTab] = useState<"properties" | "captures">("properties");
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [hoveredCaptureId, setHoveredCaptureId] = useState<string | null>(null);
@@ -170,7 +172,7 @@ export function CameraPanel() {
         addCameraCaptures(currentCamera.id, [preview.dataUrl]);
       }
     } catch (error) {
-      setCaptureError(error instanceof Error ? error.message : "机位截图失败");
+      setCaptureError(error instanceof Error ? error.message : t("camera.captureFailed"));
     }
   }
 
@@ -268,7 +270,7 @@ export function CameraPanel() {
 
   function renderCaptureCards(captureList: DirectorCameraCapture[]) {
     return (
-      <div className="camera-capture-grid" aria-label="相机截图列表">
+      <div className="camera-capture-grid" aria-label={t("camera.captureList")}>
         {captureList.map((capture) => {
           const captureActive = hoveredCaptureId === capture.id;
 
@@ -280,14 +282,18 @@ export function CameraPanel() {
                 onMouseEnter={() => setHoveredCaptureId(capture.id)}
                 onMouseLeave={() => setHoveredCaptureId((current) => (current === capture.id ? null : current))}
               >
-                <img className="camera-capture-thumb" alt={`${capture.name} 缩略图`} src={capture.dataUrl} />
+                <img
+                  className="camera-capture-thumb"
+                  alt={t("camera.thumbAlt", { name: capture.name })}
+                  src={capture.dataUrl}
+                />
                 <div
-                  aria-label={`${capture.name} 缩略图操作`}
+                  aria-label={t("camera.thumbActions", { name: capture.name })}
                   className={`camera-capture-actions${captureActive ? " is-visible" : ""}`}
                   role="group"
                 >
                   <button
-                    aria-label={`删除截图 ${capture.name}`}
+                    aria-label={t("camera.deleteCapture", { name: capture.name })}
                     className="camera-capture-action"
                     type="button"
                     onClick={(event) => {
@@ -298,7 +304,7 @@ export function CameraPanel() {
                     <Trash2 aria-hidden="true" size={14} strokeWidth={1.9} />
                   </button>
                   <button
-                    aria-label={`发送到画布 ${capture.name}`}
+                    aria-label={t("camera.sendOne", { name: capture.name })}
                     className="camera-capture-action"
                     type="button"
                     onClick={(event) => {
@@ -309,7 +315,7 @@ export function CameraPanel() {
                     <Send aria-hidden="true" size={14} strokeWidth={1.9} />
                   </button>
                   <button
-                    aria-label={`查看截图 ${capture.name}`}
+                    aria-label={t("camera.viewCapture", { name: capture.name })}
                     className="camera-capture-action"
                     type="button"
                     onClick={(event) => {
@@ -331,7 +337,7 @@ export function CameraPanel() {
 
   function renderCurrentCameraCaptureGrid() {
     if (captures.length === 0) {
-      return <div className="capture-list-placeholder">当前还没有机位截图，可先从当前机位生成一张预览。</div>;
+      return <div className="capture-list-placeholder">{t("camera.emptyCurrentCaptures")}</div>;
     }
 
     return renderCaptureCards(captures);
@@ -339,11 +345,11 @@ export function CameraPanel() {
 
   function renderCaptureEmptyState() {
     return (
-      <div className="camera-capture-empty object-search-empty-state" role="status" aria-label="暂无摄像机截图">
+      <div className="camera-capture-empty object-search-empty-state" role="status" aria-label={t("camera.emptyCaptures")}>
         <span className="object-search-empty-icon" data-testid="camera-capture-empty-icon">
           <Images aria-hidden="true" size={16} strokeWidth={1.8} />
         </span>
-        <span>暂无摄像机截图</span>
+        <span>{t("camera.emptyCaptures")}</span>
       </div>
     );
   }
@@ -358,10 +364,10 @@ export function CameraPanel() {
               .map((group) => (
                 <section
                   key={group.camera.id}
-                  aria-label={`${group.camera.name}截图`}
+                  aria-label={t("camera.groupCaptures", { name: group.camera.name })}
                   className="camera-capture-group"
                 >
-                  <h3>{group.camera.name}截图</h3>
+                  <h3>{t("camera.groupCaptures", { name: group.camera.name })}</h3>
                   {renderCaptureCards(group.captures)}
                 </section>
               ))
@@ -382,7 +388,7 @@ export function CameraPanel() {
       <div className="camera-capture-overview-footer">
         <button className="camera-capture-clear-all" type="button" onClick={handleClearAllCaptures}>
           <Trash2 aria-hidden="true" data-testid="camera-capture-clear-icon" size={14} strokeWidth={1.9} />
-          <span>清空全部</span>
+          <span>{t("camera.clearAll")}</span>
         </button>
         <button
           className="camera-capture-send-all viewport-toolbar-crowd-confirm"
@@ -390,7 +396,7 @@ export function CameraPanel() {
           onClick={sendAllCapturesToCanvas}
         >
           <Send aria-hidden="true" data-testid="camera-capture-send-icon" size={14} strokeWidth={1.9} />
-          <span>发送到画布</span>
+          <span>{t("camera.sendToCanvas")}</span>
         </button>
       </div>
     );
@@ -411,13 +417,13 @@ export function CameraPanel() {
 
     const viewer = (
       <div
-        aria-label="相机截图查看器遮罩"
+        aria-label={t("camera.viewerMask")}
         className="camera-capture-viewer-backdrop"
         role="presentation"
         onClick={closeViewer}
       >
         <div
-          aria-label="相机截图查看器"
+          aria-label={t("camera.viewer")}
           aria-modal="true"
           className="camera-capture-viewer"
           role="dialog"
@@ -428,12 +434,12 @@ export function CameraPanel() {
               {viewerCapture.name}
             </span>
             <div
-              aria-label="相机截图查看器工具栏"
+              aria-label={t("camera.viewerToolbar")}
               className="camera-capture-viewer-toolbar"
               role="toolbar"
             >
               <button
-                aria-label="放大图片"
+                aria-label={t("camera.zoomIn")}
                 className="camera-capture-viewer-tool"
                 type="button"
                 onClick={() => handleViewerZoom("in")}
@@ -441,7 +447,7 @@ export function CameraPanel() {
                 <ZoomIn aria-hidden="true" size={16} strokeWidth={2} />
               </button>
               <button
-                aria-label="缩小图片"
+                aria-label={t("camera.zoomOut")}
                 className="camera-capture-viewer-tool"
                 type="button"
                 onClick={() => handleViewerZoom("out")}
@@ -449,7 +455,7 @@ export function CameraPanel() {
                 <ZoomOut aria-hidden="true" size={16} strokeWidth={2} />
               </button>
               <button
-                aria-label="下载图片"
+                aria-label={t("camera.download")}
                 className="camera-capture-viewer-tool"
                 type="button"
                 onClick={() => downloadDataUrl(viewerCapture.dataUrl, `${viewerCapture.name}.png`)}
@@ -457,7 +463,7 @@ export function CameraPanel() {
                 <Download aria-hidden="true" size={16} strokeWidth={2} />
               </button>
               <button
-                aria-label="关闭相机截图查看器"
+                aria-label={t("camera.closeViewer")}
                 className="camera-capture-viewer-tool camera-capture-viewer-close"
                 type="button"
                 onClick={closeViewer}
@@ -469,7 +475,7 @@ export function CameraPanel() {
           <div className="camera-capture-viewer-stage">
             <img
               className={viewerImageClassName}
-              alt={`${viewerCapture.name} 查看大图`}
+              alt={t("camera.viewLarge", { name: viewerCapture.name })}
               src={viewerCapture.dataUrl}
               style={{ transform: `translate(${viewerOffset.x}px, ${viewerOffset.y}px) scale(${viewerScale})` }}
               onWheel={handleViewerWheel}
@@ -497,26 +503,26 @@ export function CameraPanel() {
 
   return (
     <InspectorPanel
-      title="摄像机"
-      ariaLabel="摄像机右侧属性面板"
+      title={t("camera.title")}
+      ariaLabel={t("camera.aria")}
       className={activeTab === "captures" ? "camera-inspector-captures" : undefined}
       footer={renderCaptureOverviewFooter()}
       tabs={[
-        { label: "属性", active: activeTab === "properties", onClick: () => setActiveTab("properties") },
-        { label: "摄像机截图", active: activeTab === "captures", onClick: () => setActiveTab("captures") },
+        { label: t("common.properties"), active: activeTab === "properties", onClick: () => setActiveTab("properties") },
+        { label: t("camera.capturesTab"), active: activeTab === "captures", onClick: () => setActiveTab("captures") },
       ]}
     >
       {activeTab === "properties" ? (
         <>
           <InspectorTextField
-            label="名称"
-            ariaLabel="机位名称"
+            label={t("common.name")}
+            ariaLabel={t("camera.name")}
             value={currentCamera.name}
             onChange={(value) => updateCamera(currentCamera.id, { name: value })}
           />
           <InspectorSelectField
-            label="切换机位"
-            ariaLabel="切换机位"
+            label={t("camera.activeCamera")}
+            ariaLabel={t("camera.activeCamera")}
             value={currentCamera.id}
             onChange={(value) => setActiveCamera(value)}
           >
@@ -527,11 +533,11 @@ export function CameraPanel() {
             ))}
           </InspectorSelectField>
           <InspectorAxisGroup
-            label="位置"
+            label={t("camera.position")}
             axes={[
               {
                 axis: "X",
-                ariaLabel: "机位位置 X",
+                ariaLabel: t("camera.posX"),
                 value: currentCamera.transform.position[0],
                 onChange: (value) =>
                   updateCamera(currentCamera.id, {
@@ -543,7 +549,7 @@ export function CameraPanel() {
               },
               {
                 axis: "Y",
-                ariaLabel: "机位位置 Y",
+                ariaLabel: t("camera.posY"),
                 value: currentCamera.transform.position[1],
                 onChange: (value) =>
                   updateCamera(currentCamera.id, {
@@ -555,7 +561,7 @@ export function CameraPanel() {
               },
               {
                 axis: "Z",
-                ariaLabel: "机位位置 Z",
+                ariaLabel: t("camera.posZ"),
                 value: currentCamera.transform.position[2],
                 onChange: (value) =>
                   updateCamera(currentCamera.id, {
@@ -568,12 +574,12 @@ export function CameraPanel() {
             ]}
           />
           <InspectorSelectField
-            label="注视目标"
-            ariaLabel="注视目标模式"
+            label={t("camera.lookTarget")}
+            ariaLabel={t("camera.lookTargetMode")}
             value={targetSelectValue}
             onChange={handleTargetSelection}
           >
-            <option value="manual">手动坐标</option>
+            <option value="manual">{t("camera.manualCoords")}</option>
             {focusableObjects.map((item) => (
               <option key={item.id} value={`object:${item.id}`}>
                 {item.name}
@@ -581,46 +587,46 @@ export function CameraPanel() {
             ))}
           </InspectorSelectField>
           <InspectorAxisGroup
-            label="注视坐标"
+            label={t("camera.lookCoords")}
             axes={[
               {
                 axis: "X",
-                ariaLabel: "注视坐标 X",
+                ariaLabel: t("camera.targetX"),
                 value: currentCamera.target[0],
                 onChange: (value) => updateManualTarget(0, value),
               },
               {
                 axis: "Y",
-                ariaLabel: "注视坐标 Y",
+                ariaLabel: t("camera.targetY"),
                 value: currentCamera.target[1],
                 onChange: (value) => updateManualTarget(1, value),
               },
               {
                 axis: "Z",
-                ariaLabel: "注视坐标 Z",
+                ariaLabel: t("camera.targetZ"),
                 value: currentCamera.target[2],
                 onChange: (value) => updateManualTarget(2, value),
               },
             ]}
           />
           <InspectorRangeNumberField
-            label="视野角度 (FOV)"
-            rangeAriaLabel="机位 FOV 滑杆"
-            numberAriaLabel="机位 FOV"
+            label={t("camera.fov")}
+            rangeAriaLabel={t("camera.fovSlider")}
+            numberAriaLabel={t("camera.fovValue")}
             max="120"
             min="10"
             step="0.1"
             value={currentCamera.fov}
             onValueChange={(value) => updateCamera(currentCamera.id, { fov: Number(value) })}
           />
-          <InspectorSection title="相机截图" className="camera-capture-section">
+          <InspectorSection title={t("camera.captures")} className="camera-capture-section">
             <button
               className="camera-capture-current-button"
               type="button"
               onClick={() => void handleCameraCapture()}
             >
               <Camera aria-hidden="true" data-testid="camera-current-capture-icon" size={14} strokeWidth={1.9} />
-              <span>当前机位截图</span>
+              <span>{t("camera.captureCurrent")}</span>
             </button>
             {captureError ? <p>{captureError}</p> : null}
             {renderCurrentCameraCaptureGrid()}

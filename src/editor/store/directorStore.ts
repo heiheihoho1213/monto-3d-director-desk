@@ -52,7 +52,6 @@ export interface CrowdCharactersInput {
 }
 
 export interface DirectorStateOptions {
-  includePersistedLocalAssets?: boolean;
   includePersistedScene?: boolean;
   persistenceScopeId?: string | null;
 }
@@ -187,7 +186,6 @@ const GEOMETRY_PRIMITIVE_COLOR = "#d7e7ff";
 const ADDED_MODEL_WORLD_SPACING = 1.25;
 const COPY_PASTE_POSITION_OFFSET = 0.6;
 const UNDO_STACK_LIMIT = 80;
-const LOCAL_MODEL_LIBRARY_STORAGE_KEY = "monto-3d-director-local-model-library";
 const DIRECTOR_SCENE_STORAGE_KEY = "monto-3d-director-desk-demo";
 const DIRECTOR_SCENE_STORAGE_KEY_PREFIX = `${DIRECTOR_SCENE_STORAGE_KEY}:`;
 const DEFAULT_UI_STATE: DirectorUiState = {
@@ -266,8 +264,33 @@ function getNextSequentialId(existingIds: string[], prefix: string, minimumIndex
   return `${prefix}${maxIndex + 1}`;
 }
 
-function isLocalModelLibraryAsset(asset: DirectorAssetRef) {
+function isLocalImportedModelAsset(asset: DirectorAssetRef) {
   return asset.sourceType === "model" && asset.kind !== "panorama" && asset.assetSource === "local";
+}
+
+function stripLocalImportedModelsFromProject(project: DirectorProject): DirectorProject {
+  const localAssetIds = new Set(project.assets.filter(isLocalImportedModelAsset).map((asset) => asset.id));
+  if (localAssetIds.size === 0) return project;
+
+  const nextObjects = project.objects.filter((item) => !item.assetRefId || !localAssetIds.has(item.assetRefId));
+  const removedObjectIds = new Set(
+    project.objects.filter((item) => item.assetRefId && localAssetIds.has(item.assetRefId)).map((item) => item.id)
+  );
+
+  return {
+    ...project,
+    assets: project.assets.filter((asset) => !localAssetIds.has(asset.id)),
+    objects: nextObjects,
+    cameras: project.cameras.map((camera) =>
+      camera.targetObjectId && removedObjectIds.has(camera.targetObjectId)
+        ? {
+            ...camera,
+            targetMode: "manual" as const,
+            targetObjectId: null,
+          }
+        : camera
+    ),
+  };
 }
 
 function getLocalStorageSafe() {
@@ -278,52 +301,6 @@ function getLocalStorageSafe() {
 
 function cloneJsonValue<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function readPersistedLocalModelAssets() {
-  const storage = getLocalStorageSafe();
-  if (!storage) return [];
-
-  try {
-    const snapshot = storage.getItem(LOCAL_MODEL_LIBRARY_STORAGE_KEY);
-    if (!snapshot) return [];
-
-    const parsed = JSON.parse(snapshot);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter(
-      (asset): asset is DirectorAssetRef =>
-        asset &&
-        typeof asset.id === "string" &&
-        typeof asset.fileName === "string" &&
-        typeof asset.url === "string" &&
-        isLocalModelLibraryAsset(asset)
-    );
-  } catch {
-    return [];
-  }
-}
-
-function writePersistedLocalModelAssets(assets: DirectorAssetRef[]) {
-  const storage = getLocalStorageSafe();
-  if (!storage) return;
-
-  try {
-    storage.setItem(LOCAL_MODEL_LIBRARY_STORAGE_KEY, JSON.stringify(assets.filter(isLocalModelLibraryAsset)));
-  } catch {
-    // Local model files can exceed browser storage limits; keep the current scene usable if persistence fails.
-  }
-}
-
-function persistLocalModelAsset(asset: DirectorAssetRef) {
-  if (!isLocalModelLibraryAsset(asset)) return;
-
-  const persistedAssets = readPersistedLocalModelAssets().filter((item) => item.id !== asset.id);
-  writePersistedLocalModelAssets([...persistedAssets, asset]);
-}
-
-function removePersistedLocalModelAsset(assetId: string) {
-  writePersistedLocalModelAssets(readPersistedLocalModelAssets().filter((asset) => asset.id !== assetId));
 }
 
 function isDirectorProjectShape(value: unknown): value is DirectorProject {
@@ -338,20 +315,6 @@ function isDirectorProjectShape(value: unknown): value is DirectorProject {
     Boolean(project.scene) &&
     typeof project.scene?.backgroundColor === "string"
   );
-}
-
-function withPersistedLocalAssets(project: DirectorProject, includePersistedLocalAssets = false): DirectorProject {
-  if (!includePersistedLocalAssets) return project;
-
-  const persistedAssets = readPersistedLocalModelAssets();
-  if (!persistedAssets.length) return project;
-
-  const existingAssetIds = new Set(project.assets.map((asset) => asset.id));
-
-  return {
-    ...project,
-    assets: [...project.assets, ...persistedAssets.filter((asset) => !existingAssetIds.has(asset.id))],
-  };
 }
 
 function migrateDirectorProject(project: DirectorProject): DirectorProject {
@@ -397,16 +360,20 @@ function writePersistedDirectorState(state: DirectorState) {
   if (!storage) return;
 
   try {
-    storage.setItem(getDirectorSceneStorageKey(), JSON.stringify(state));
+    const persistedState: DirectorState = {
+      ...state,
+      project: stripLocalImportedModelsFromProject(state.project),
+    };
+    storage.setItem(getDirectorSceneStorageKey(), JSON.stringify(persistedState));
   } catch {
     // Keep the editor usable if the browser storage quota is exceeded.
   }
 }
 
-function createStateFromPersistedProject(project: DirectorProject, options: DirectorStateOptions = {}): DirectorState {
+function createStateFromPersistedProject(project: DirectorProject): DirectorState {
   return {
     ...DEFAULT_UI_STATE,
-    project: withPersistedLocalAssets(migrateDirectorProject(cloneJsonValue(project)), options.includePersistedLocalAssets),
+    project: stripLocalImportedModelsFromProject(migrateDirectorProject(cloneJsonValue(project))),
   };
 }
 
@@ -421,7 +388,7 @@ function readPersistedDirectorState(options: DirectorStateOptions = {}): Directo
     const parsed = JSON.parse(snapshot) as unknown;
 
     if (isDirectorProjectShape(parsed)) {
-      return createStateFromPersistedProject(parsed, options);
+      return createStateFromPersistedProject(parsed);
     }
 
     if (!parsed || typeof parsed !== "object") return null;
@@ -444,10 +411,7 @@ function readPersistedDirectorState(options: DirectorStateOptions = {}): Directo
       viewportPanelsCollapsed: Boolean(state.viewportPanelsCollapsed),
       panoramaImportLocked: false,
       panoramaPreviewVisible: true,
-      project: withPersistedLocalAssets(
-        migrateDirectorProject(cloneJsonValue(state.project)),
-        options.includePersistedLocalAssets
-      ),
+      project: stripLocalImportedModelsFromProject(migrateDirectorProject(cloneJsonValue(state.project))),
     };
   } catch {
     return null;
@@ -531,11 +495,7 @@ function mergeSelectionAfterHistoryRestore(
   });
 }
 
-export function createDefaultDirectorProject({
-  includePersistedLocalAssets = false,
-}: {
-  includePersistedLocalAssets?: boolean;
-} = {}): DirectorProject {
+export function createDefaultDirectorProject(): DirectorProject {
   const camera: DirectorCameraShot = {
     id: "cam_1",
     name: formatSceneItemName("机位", 1),
@@ -576,7 +536,7 @@ export function createDefaultDirectorProject({
   return {
     version: 1,
     scene: DEFAULT_SCENE,
-    assets: includePersistedLocalAssets ? readPersistedLocalModelAssets() : [],
+    assets: [],
     objects: [role, cameraObject],
     cameras: [camera],
     activeCameraId: camera.id,
@@ -591,7 +551,7 @@ export function createInitialDirectorState(options: DirectorStateOptions = {}): 
     return persistedState;
   }
 
-  const project = createDefaultDirectorProject({ includePersistedLocalAssets: options.includePersistedLocalAssets });
+  const project = createDefaultDirectorProject();
   const firstCharacterId = project.objects.find((item) => item.kind === "character")?.id ?? null;
 
   return {
@@ -1116,7 +1076,7 @@ function trimUndoStack(stack: DirectorState[]) {
 
 export const useDirectorStore = create<DirectorStore>((set, get) => {
   const initialRuntimeState = createRuntimeStateFromPersistedState(
-    createInitialDirectorState({ includePersistedLocalAssets: true, includePersistedScene: true })
+    createInitialDirectorState({ includePersistedScene: true })
   );
 
   function commitMutation(
@@ -1375,8 +1335,6 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         const targetAsset = state.project.assets.find((item) => item.id === assetId);
         if (!targetAsset || targetAsset.sourceType !== "model") return state;
 
-        removePersistedLocalModelAsset(assetId);
-
         const removedObjectIds = new Set(
           state.project.objects.filter((item) => item.assetRefId === assetId).map((item) => item.id)
         );
@@ -1630,8 +1588,6 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         }
 
         if (input.addToScene === false) {
-          persistLocalModelAsset(nextAsset);
-
           return {
             ...state,
             project: {
@@ -2142,7 +2098,6 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
       const currentState = get() as DirectorRuntimeState;
       setDirectorScenePersistenceScopeId(scopeId);
       const snapshot = createInitialDirectorState({
-        includePersistedLocalAssets: true,
         includePersistedScene,
         persistenceScopeId: directorScenePersistenceScopeId,
       });
@@ -2177,7 +2132,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
       writePersistedDirectorState(extractPersistedDirectorState(get() as DirectorRuntimeState));
     },
     restoreLatestSnapshot: () => {
-      const snapshot = readPersistedDirectorState({ includePersistedLocalAssets: true, includePersistedScene: true });
+      const snapshot = readPersistedDirectorState({ includePersistedScene: true });
       if (!snapshot) return;
 
       set({

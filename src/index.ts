@@ -9,7 +9,11 @@ export type {
   DirectorDeskHandle,
   DirectorDeskScreenshot,
   DirectorDeskImageDataUrl,
+  DirectorDeskUploadModel,
+  DirectorDeskLang,
 } from "./DirectorDesk";
+
+export { DIRECTOR_DESK_LANGS } from "./DirectorDesk";
 
 export {
   captureCurrentView,
