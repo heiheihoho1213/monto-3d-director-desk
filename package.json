@@ -1,6 +1,6 @@
 {
   "name": "monto-3d-director-desk",
-  "version": "0.0.9",
+  "version": "0.0.11",
   "description": "A browser-based 3D director desk React component built with Vite, Three.js, and React Three Fiber.",
   "license": "MIT",
   "author": "heiheihoho1213 <heng.du@ucloud.cn>",
@@ -28,7 +28,9 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/monto-3d-director-desk.js"
+      "import": "./dist/monto-3d-director-desk.js",
+      "require": "./dist/monto-3d-director-desk.js",
+      "default": "./dist/monto-3d-director-desk.js"
     },
     "./style.css": "./dist/style.css",
     "./monto-3d-director-desk.css": "./dist/style.css"

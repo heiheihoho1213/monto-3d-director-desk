@@ -8,7 +8,7 @@ export default defineConfig({
   assetsInclude: ["**/*.fbx", "**/*.obj", "**/*.glb"],
   build: {
     lib: {
-      entry: resolve(__dirname, "src/index.ts"),
+      entry: resolve(__dirname, "src/lib-entry.ts"),
       name: "Monto3DDirectorDesk",
       formats: ["es"],
       fileName: "monto-3d-director-desk",
@@ -31,6 +31,7 @@ export default defineConfig({
         /^three-stdlib\//,
       ],
       output: {
+        exports: "named",
         assetFileNames: (assetInfo) => {
           if (assetInfo.name?.endsWith(".css")) {
             return "style.css";
