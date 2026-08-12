@@ -11,6 +11,7 @@ import {
   Texture,
   TextureLoader,
 } from "three";
+import { useT } from "../../i18n";
 import type { DirectorAssetRef, PanoramaProjectionMode } from "../schema/directorProject";
 import { getPanoramaRotationRadians } from "./panoramaMath";
 
@@ -102,6 +103,7 @@ export function ViewportBackground({
   panoramaVisible?: boolean;
 }) {
   const { gl, scene } = useThree();
+  const t = useT();
   const projectionMode = panoramaAsset?.projectionMode ?? "equirectangular";
   const textureState = usePanoramaTexture(panoramaAsset?.url ?? null, projectionMode);
   const safeRadius = Math.max(10, panoramaRadius);
@@ -149,17 +151,14 @@ export function ViewportBackground({
           <div className="viewport-error-card" role="status">
             {/^https?:\/\//i.test(panoramaAsset?.url ?? "") ? (
               <>
-                <strong>全景图无法贴到场景</strong>
-                <span>原因：远程图片未开放跨域（CORS）</span>
-                <span>
-                  侧栏缩略图可以显示，但 WebGL 纹理需要图片响应头包含可用的
-                  Access-Control-Allow-Origin。请在对象存储配置 CORS，或改为传入同源地址 / blob / data URL。
-                </span>
+                <strong>{t("viewport.panoramaCors")}</strong>
+                <span>{t("viewport.panoramaCorsReason")}</span>
+                <span>{t("viewport.panoramaCorsHint")}</span>
               </>
             ) : (
               <>
-                <strong>全景图加载失败</strong>
-                <span>请重新导入 JPG / PNG / WEBP 图片</span>
+                <strong>{t("viewport.panoramaFailed")}</strong>
+                <span>{t("viewport.panoramaFailedHint")}</span>
               </>
             )}
           </div>

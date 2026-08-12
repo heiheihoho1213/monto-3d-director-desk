@@ -517,6 +517,27 @@ it("can open a scoped scene without restoring localStorage", () => {
   expect(useDirectorStore.getState().project.scene.backgroundColor).toBe("#000000");
 });
 
+it("does not persist imported local models into localStorage scene snapshots", () => {
+  useDirectorStore.getState().addImportedAsset({
+    kind: "prop",
+    fileName: "chair.obj",
+    name: "本地椅子",
+    url: "data:model/plain;base64,local-chair",
+    assetSource: "local",
+  });
+
+  expect(useDirectorStore.getState().project.assets.some((item) => item.fileName === "chair.obj")).toBe(true);
+
+  const snapshot = JSON.parse(localStorage.getItem("monto-3d-director-desk-demo") ?? "{}") as {
+    project?: { assets?: Array<{ fileName?: string; assetSource?: string }>; objects?: Array<{ name?: string }> };
+  };
+
+  expect(localStorage.getItem("monto-3d-director-local-model-library")).toBeNull();
+  expect(snapshot.project?.assets?.some((item) => item.fileName === "chair.obj")).toBeFalsy();
+  expect(snapshot.project?.objects?.some((item) => item.name === "本地椅子")).toBeFalsy();
+  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "本地椅子")).toBe(true);
+});
+
 it("hydrates the initial state from the persisted director scene snapshot", () => {
   localStorage.setItem(
     "monto-3d-director-desk-demo",
@@ -540,7 +561,6 @@ it("hydrates the initial state from the persisted director scene snapshot", () =
   );
 
   const hydratedState = createInitialDirectorState({
-    includePersistedLocalAssets: true,
     includePersistedScene: true,
   });
 

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, vi } from "vitest";
 import { clearViewportCaptureHandler, setViewportCaptureHandler } from "../io/captureBridge";
 import { BODY_TYPE_OPTIONS } from "../runtime/mannequin/bodyTypes";
 import { createInitialDirectorState, useDirectorStore } from "../store/directorStore";
+import { ModelUploadProvider } from "../io/modelUploadContext";
 import { getCameraRigPositionFromViewSnapshot, getCameraViewSnapshotFromShot } from "../schema/cameraGeometry";
 import { ViewportToolbar } from "./ViewportToolbar";
 
@@ -119,8 +120,6 @@ it("renders the viewport capsule as project icon-system buttons", () => {
     "缩放",
     "添加角色",
     "导入全景图",
-    "导入本地模型",
-    "模型库",
     "添加机位",
     "选择画幅比例",
     "当前视角截图",
@@ -137,21 +136,18 @@ it("renders the viewport capsule as project icon-system buttons", () => {
   });
 
   expect(toolbar).toHaveClass("viewport-toolbar");
-
-  const toolbarButtonLabels = Array.from(toolbar.querySelectorAll("button[aria-label]")).map((button) =>
-    button.getAttribute("aria-label")
-  );
-  expect(toolbarButtonLabels.indexOf("模型库")).toBe(toolbarButtonLabels.indexOf("导入本地模型") + 1);
+  expect(within(toolbar).queryByRole("button", { name: "导入本地模型" })).not.toBeInTheDocument();
+  expect(within(toolbar).queryByRole("button", { name: "模型库" })).not.toBeInTheDocument();
 });
 
 it("renders custom hover labels alongside toolbar titles", () => {
   render(<ViewportToolbar />);
 
   const toolbar = screen.getByRole("group", { name: "3D视口快捷工具" });
-  const button = within(toolbar).getByRole("button", { name: "导入本地模型" });
-  const label = within(button).getByText("导入本地模型");
+  const button = within(toolbar).getByRole("button", { name: "导入全景图" });
+  const label = within(button).getByText("导入全景图");
 
-  expect(button).toHaveAttribute("title", "导入本地模型");
+  expect(button).toHaveAttribute("title", "导入全景图");
   expect(label).toHaveClass("viewport-toolbar-label");
 });
 
@@ -437,7 +433,7 @@ it("opens a crowd panel from the add-character menu hover row and adds a 3x3 cha
 
 it("opens the model library panel from the viewport capsule", async () => {
   const user = userEvent.setup();
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
 
@@ -457,7 +453,7 @@ it("opens the model library panel from the viewport capsule", async () => {
 
 it("uses category thumbnail folders for outdoor and tools model library items", async () => {
   const user = userEvent.setup();
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("tab", { name: "户外出行" }));
@@ -474,7 +470,7 @@ it("uses category thumbnail folders for outdoor and tools model library items", 
 
 it("renders floating viewport menus and model library outside the frosted toolbar shell", async () => {
   const user = userEvent.setup();
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   const toolbar = screen.getByRole("group", { name: "3D视口快捷工具" });
 
@@ -493,7 +489,7 @@ it("renders floating viewport menus and model library outside the frosted toolba
 
 it("closes the model library panel from its close button", async () => {
   const user = userEvent.setup();
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("button", { name: "关闭模型库" }));
@@ -503,7 +499,7 @@ it("closes the model library panel from its close button", async () => {
 
 it("adds a selected model library item into the viewport scene", async () => {
   const user = userEvent.setup();
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("button", { name: "添加模型 自动取款机" }));
@@ -522,7 +518,7 @@ it("adds a selected model library item into the viewport scene", async () => {
 
 it("shows a centered empty state with a local import action inside the my-models tab", async () => {
   const user = userEvent.setup();
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("tab", { name: "我的模型" }));
@@ -540,7 +536,7 @@ it("imports a local model into the my-models tab without adding it to the scene 
     name: "本地椅子",
     url: "blob:local-chair",
   });
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("tab", { name: "我的模型" }));
@@ -571,7 +567,7 @@ it("imports multiple local model files into the my-models tab at once", async ()
     name: file.name.replace(/\.(fbx|obj)$/i, ""),
     url: `data:model/plain;base64,${file.name}`,
   }));
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("tab", { name: "我的模型" }));
@@ -598,7 +594,7 @@ it("imports multiple local model files into the my-models tab at once", async ()
   expect(mockReadLocalModelFile).toHaveBeenCalledTimes(2);
 });
 
-it("restores imported my-models assets after browser refresh initialization", async () => {
+it("keeps imported my-models assets in memory without restoring them from localStorage", async () => {
   const user = userEvent.setup();
   mockReadLocalModelFile.mockResolvedValue({
     id: "local-model-persisted",
@@ -606,7 +602,7 @@ it("restores imported my-models assets after browser refresh initialization", as
     name: "本地椅子",
     url: "data:model/plain;base64,cGERSISTED",
   });
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("tab", { name: "我的模型" }));
@@ -620,21 +616,18 @@ it("restores imported my-models assets after browser refresh initialization", as
     expect(useDirectorStore.getState().project.assets.some((item) => item.fileName === "chair.obj")).toBe(true);
   });
 
+  expect(localStorage.getItem("monto-3d-director-local-model-library")).toBeNull();
+  expect(screen.getByText("本地椅子")).toBeInTheDocument();
+
   await act(async () => {
     useDirectorStore.setState({
       ...useDirectorStore.getState(),
-      ...createInitialDirectorState({ includePersistedLocalAssets: true }),
+      ...createInitialDirectorState({ includePersistedScene: true }),
     });
   });
 
-  await waitFor(() => {
-    expect(screen.getByText("本地椅子")).toBeInTheDocument();
-  });
-
-  const restoredAsset = useDirectorStore.getState().project.assets.find((item) => item.fileName === "chair.obj");
-  expect(restoredAsset?.assetSource).toBe("local");
-  expect(restoredAsset?.url).toBe("data:model/plain;base64,cGERSISTED");
-  expect(useDirectorStore.getState().project.objects.some((item) => item.name === "本地椅子")).toBe(false);
+  expect(useDirectorStore.getState().project.assets.some((item) => item.fileName === "chair.obj")).toBe(false);
+  expect(screen.queryByText("本地椅子")).not.toBeInTheDocument();
 });
 
 it("still imports a local model directly into the scene from the viewport capsule action", async () => {
@@ -645,7 +638,7 @@ it("still imports a local model directly into the scene from the viewport capsul
     name: "本地台灯",
     url: "blob:local-lamp",
   });
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "导入本地模型" }));
 
@@ -663,6 +656,80 @@ it("still imports a local model directly into the scene from the viewport capsul
   expect(state.project.objects.some((item) => item.name === "本地台灯")).toBe(true);
 });
 
+it("forwards the host uploadModel callback when importing a local model", async () => {
+  const user = userEvent.setup();
+  const uploadModel = vi.fn(async () => "https://cdn.example.com/models/lamp.obj");
+  mockReadLocalModelFile.mockImplementation(async (file: File, options?: { uploadModel?: typeof uploadModel }) => ({
+    id: "local-model-upload",
+    fileName: file.name,
+    name: "远程台灯",
+    url: options?.uploadModel ? await options.uploadModel(file) : "data:fallback",
+  }));
+
+  render(
+    <ModelUploadProvider uploadModel={uploadModel}>
+      <ViewportToolbar showExternalModelActions />
+    </ModelUploadProvider>
+  );
+
+  await user.click(screen.getByRole("button", { name: "导入本地模型" }));
+  await user.upload(
+    screen.getByTestId("scene-local-model-input") as HTMLInputElement,
+    new File(["lamp"], "lamp.obj", { type: "model/obj" })
+  );
+
+  await waitFor(() => {
+    expect(useDirectorStore.getState().project.assets.some((item) => item.url === "https://cdn.example.com/models/lamp.obj")).toBe(
+      true
+    );
+  });
+
+  expect(mockReadLocalModelFile).toHaveBeenCalledWith(expect.any(File), { uploadModel });
+  expect(uploadModel).toHaveBeenCalledTimes(1);
+});
+
+it("shows a loading overlay while a local model import is in progress", async () => {
+  const user = userEvent.setup();
+  let resolveImport: ((value: {
+    id: string;
+    fileName: string;
+    name: string;
+    url: string;
+  }) => void) | null = null;
+
+  mockReadLocalModelFile.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveImport = resolve;
+      })
+  );
+
+  render(<ViewportToolbar showExternalModelActions />);
+
+  await user.click(screen.getByRole("button", { name: "导入本地模型" }));
+  await user.upload(
+    screen.getByTestId("scene-local-model-input") as HTMLInputElement,
+    new File(["lamp"], "lamp.obj", { type: "model/obj" })
+  );
+
+  expect(await screen.findByRole("status", { name: "正在导入 lamp.obj…" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "导入本地模型" })).toBeDisabled();
+
+  await act(async () => {
+    resolveImport?.({
+      id: "local-model-loading",
+      fileName: "lamp.obj",
+      name: "本地台灯",
+      url: "blob:local-lamp",
+    });
+  });
+
+  await waitFor(() => {
+    expect(screen.queryByRole("status", { name: "正在导入 lamp.obj…" })).not.toBeInTheDocument();
+  });
+  expect(screen.getByRole("button", { name: "导入本地模型" })).not.toBeDisabled();
+});
+
 it("shows a delete action on my-models cards and removes the asset plus its scene instances", async () => {
   const user = userEvent.setup();
   mockReadLocalModelFile.mockResolvedValue({
@@ -671,7 +738,7 @@ it("shows a delete action on my-models cards and removes the asset plus its scen
     name: "本地椅子",
     url: "blob:local-chair",
   });
-  render(<ViewportToolbar />);
+  render(<ViewportToolbar showExternalModelActions />);
 
   await user.click(screen.getByRole("button", { name: "模型库" }));
   await user.click(screen.getByRole("tab", { name: "我的模型" }));

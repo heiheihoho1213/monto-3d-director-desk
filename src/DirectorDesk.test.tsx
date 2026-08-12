@@ -282,6 +282,25 @@ it("debounces onChange when project content changes", () => {
   vi.useRealTimers();
 });
 
+it("accepts an uploadModel prop for host-side model uploads", () => {
+  const uploadModel = vi.fn(async () => "https://cdn.example.com/model.fbx");
+
+  render(
+    <DirectorDesk instanceId="scope-upload-model" uploadModel={uploadModel} showCloseButton={false} />
+  );
+
+  expect(screen.getByTestId("mock-director-canvas")).toBeInTheDocument();
+  expect(uploadModel).not.toHaveBeenCalled();
+});
+
+it("switches chrome copy when lang is en", () => {
+  render(<DirectorDesk instanceId="scope-lang-en" lang="en" showCloseButton={false} />);
+
+  expect(screen.getByRole("button", { name: "Director View" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Camera View" })).toBeInTheDocument();
+  expect(screen.getByText("3D Director Desk")).toBeInTheDocument();
+});
+
 it("does not emit onChange while applying initial", () => {
   vi.useFakeTimers();
   const onChange = vi.fn();

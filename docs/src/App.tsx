@@ -5,11 +5,23 @@ import {
   createDefaultDirectorProject,
   type DirectorDeskCapture,
   type DirectorDeskHandle,
+  type DirectorDeskLang,
   type DirectorDeskMaterial,
   type DirectorDeskScreenshot,
   type DirectorDeskTheme,
   type DirectorProject,
 } from "monto-3d-director-desk";
+
+/**
+ * 宿主上传示例：真实环境里改成你们的模型库上传 API，返回 CDN / OSS URL。
+ * playground 用 object URL 代替 base64，避免大文件把 onChange 工程 JSON 撑爆。
+ */
+export async function uploadModel(file: File): Promise<string> {
+  await new Promise((resolve) => {
+    window.setTimeout(resolve, 2000);
+  });
+  return URL.createObjectURL(file);
+}
 
 /** Route remote http(s) images through the docs Vite CORS proxy for WebGL texture loads. */
 function toPlaygroundPanoramaUrl(url: string) {
@@ -98,6 +110,7 @@ function applySceneForm(project: DirectorProject, form: SceneFormState): Directo
 export default function App() {
   const defaultProject = useMemo(() => createDefaultDirectorProject(), []);
   const [theme, setTheme] = useState<DirectorDeskTheme>("light");
+  const [lang, setLang] = useState<DirectorDeskLang>("zh");
   const [readyAt, setReadyAt] = useState<string | null>(null);
   const [lastEvent, setLastEvent] = useState("等待组件事件…");
   const [captures, setCaptures] = useState<DirectorDeskCapture[]>([]);
@@ -219,6 +232,14 @@ export default function App() {
           >
             <option value="dark">dark</option>
             <option value="light">light</option>
+          </select>
+        </label>
+
+        <label className="docs-field">
+          <span>语言 lang</span>
+          <select value={lang} onChange={(event) => setLang(event.target.value as DirectorDeskLang)}>
+            <option value="zh">zh</option>
+            <option value="en">en</option>
           </select>
         </label>
 
@@ -528,12 +549,13 @@ export default function App() {
       <main className="docs-stage">
         <DirectorDesk
           ref={deskRef}
-          key={instanceId}
+          key={`${instanceId}-${lang}`}
           theme={theme}
+          lang={lang}
           instanceId={instanceId}
           initial={initial}
           material={material}
-          title="组件调用示例"
+          title={lang === "en" ? "Component playground" : "组件调用示例"}
           showCloseButton
           onReady={() => {
             setReadyAt(new Date().toLocaleTimeString());
@@ -550,6 +572,12 @@ export default function App() {
             console.log("onCapturesSent", items);
             setCaptures(items);
             setLastEvent(`onCapturesSent (${items.length})`);
+          }}
+          uploadModel={async (file) => {
+            setLastEvent(`uploadModel: ${file.name}`);
+            const url = await uploadModel(file);
+            console.log("uploadModel", file.name, url);
+            return url;
           }}
         />
       </main>

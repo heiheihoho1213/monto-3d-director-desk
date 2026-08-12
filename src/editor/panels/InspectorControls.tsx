@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronDown } from "lucide-react";
+import { useT } from "../../i18n";
 import { useDirectorStore } from "../store/directorStore";
 
 type InspectorTab = {
@@ -160,13 +161,15 @@ export function InspectorPanel({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const t = useT();
+
   return (
     <section className={`panel-card right-inspector${className ? ` ${className}` : ""}`} aria-label={ariaLabel}>
       <header className="right-inspector-header">
         <h2 className="right-inspector-title">{title}</h2>
       </header>
       {tabs ? (
-        <div className="tab-row right-inspector-tabs" role="tablist" aria-label={`${title}面板标签`}>
+        <div className="tab-row right-inspector-tabs" role="tablist" aria-label={t("common.panelTabs", { title })}>
           {tabs.map((tab) => (
             <button
               key={tab.label}
@@ -234,6 +237,7 @@ export function InspectorSelectField({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const t = useT();
   const resolvedOptions = options ?? parseSelectOptions(children);
   const selectedOption = resolvedOptions.find((option) => option.value === value) ?? resolvedOptions[0];
 
@@ -289,7 +293,7 @@ export function InspectorSelectField({
           onClick={() => setIsOpen((current) => !current)}
           onKeyDown={handleTriggerKeyDown}
         >
-          <span className="inspector-dropdown-value">{selectedOption?.label ?? "请选择"}</span>
+          <span className="inspector-dropdown-value">{selectedOption?.label ?? t("common.pleaseSelect")}</span>
           <ChevronDown aria-hidden="true" className="inspector-dropdown-chevron" strokeWidth={1.8} />
         </button>
         {isOpen ? (
@@ -335,6 +339,7 @@ function InspectorAxisInput({ control }: { control: AxisControl }) {
   const [isDragging, setIsDragging] = useState(false);
   const cleanupDragRef = useRef<(() => void) | null>(null);
   const { beginInteraction, endInteraction } = useUndoBatchInteraction();
+  const t = useT();
   const axisStep = control.step ?? DEFAULT_AXIS_STEP;
 
   useEffect(() => () => cleanupDragRef.current?.(), []);
@@ -412,7 +417,7 @@ function InspectorAxisInput({ control }: { control: AxisControl }) {
   return (
     <div className={`inspector-axis-input${isDragging ? " is-dragging" : ""}`}>
       <button
-        aria-label={`${control.ariaLabel} 拖动调整`}
+        aria-label={t("common.dragAdjust", { label: control.ariaLabel })}
         className="inspector-axis-prefix"
         type="button"
         onKeyDown={handlePrefixKeyDown}

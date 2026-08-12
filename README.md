@@ -89,8 +89,34 @@ export function MyPage() {
 ```
 
 - `initial`：外部工程快照（`DirectorProject`），每个 `instanceId` 首次就绪时灌入一次（支持异步后到）。
+- `lang`：界面语言，`"zh" | "en"`，默认 `"zh"`。
 - `onChange`：工程内容变化时触发（默认防抖 300ms），便于宿主持久化。
+- `uploadModel`：可选。传入宿主侧 `export async function` 上传函数；导入 FBX/OBJ 时 `await` 其返回的 URL，写入 `project.assets[].url`。未传时仍回退为 base64 Data URL。
 - `ref`：暴露截图 imperative API（见下）。
+
+```tsx
+<DirectorDesk lang="en" title="Director Desk" />
+```
+
+```ts
+// host: uploadModel.ts
+export async function uploadModel(file: File): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch("/api/models/upload", { method: "POST", body: form });
+  const data = await response.json();
+  return data.url; // e.g. https://cdn.example.com/models/xxx.fbx
+}
+```
+
+```tsx
+import { uploadModel } from "./uploadModel";
+
+<DirectorDesk
+  uploadModel={uploadModel}
+  onChange={(project) => console.log(project.assets)}
+/>
+```
 
 ### 截图 API
 
@@ -177,7 +203,8 @@ pnpm dev:docs
 
 ## 数据与嵌入
 
-- 当前场景与本地模型库会写入浏览器 `localStorage`
+- 当前场景会写入浏览器 `localStorage`（不含本地导入的外挂模型文件）
+- 本地导入模型保存在当前工程 `project.assets` 中；传入 `uploadModel` 时存远程 URL，否则回退 base64 Data URL。由宿主通过 `onChange` / `initial` 持久化。
 - 支持导出工程 JSON，也支持通过文件重新导入
 - 支持“保存最近工程 / 恢复最近工程”
 - 组件已包含宿主页面通信桥，适合嵌入到更大的创作工作台中

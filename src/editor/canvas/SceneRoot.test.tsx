@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { Box3, Vector3 } from "three";
+import { Box3, BoxGeometry, Group, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { afterEach, beforeEach, vi } from "vitest";
 import { VIEWPORT_CAMERA_VISUAL_SCALE } from "../schema/cameraGeometry";
 import { createInitialDirectorState, useDirectorStore } from "../store/directorStore";
-import { getImportedModelNormalization, SceneRoot } from "./SceneRoot";
+import { getImportedModelNormalization, isolateAndTintImportedModelMaterials, SceneRoot } from "./SceneRoot";
 
 const mockCharacterModelShouldSuspend = vi.hoisted(() => ({ current: false }));
 
@@ -361,6 +361,22 @@ it("keeps imported model normalization neutral for empty bounds", () => {
 
   expect(normalization.scale).toBe(1);
   expect(normalization.position).toEqual([0, 0, 0]);
+});
+
+it("tints imported model mesh materials without mutating the shared source material", () => {
+  const sharedMaterial = new MeshStandardMaterial({ color: "#ffffff" });
+  const mesh = new Mesh(new BoxGeometry(1, 1, 1), sharedMaterial);
+  const root = new Group();
+  root.add(mesh);
+
+  isolateAndTintImportedModelMaterials(root, "#ec0e19");
+
+  expect(sharedMaterial.color.getHexString()).toBe("ffffff");
+  expect(mesh.material).not.toBe(sharedMaterial);
+  expect((mesh.material as MeshStandardMaterial).color.getHexString()).toBe("ec0e19");
+
+  isolateAndTintImportedModelMaterials(root, "#4f8ef7");
+  expect((mesh.material as MeshStandardMaterial).color.getHexString()).toBe("4f8ef7");
 });
 
 it("renders the viewport camera as a reference-style blue wireframe model and viewfinder", () => {

@@ -241,6 +241,9 @@ it("renders the model library panel with the same frosted glass background treat
   expect(modelLibraryThumbHoverRule).toContain("background: rgb(var(--surface-hover-rgb));");
   expect(modelLibraryThumbHoverRule).not.toContain("border-color:");
   expect(css).toMatch(/\.model-library-thumb-image\s*\{[\s\S]*?width:\s*100%;[\s\S]*?height:\s*100%;[\s\S]*?object-fit:\s*cover;/);
+  expect(css).toMatch(/\.model-import-loading-overlay\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;[\s\S]*?z-index:\s*100010;[\s\S]*?display:\s*grid;[\s\S]*?place-items:\s*center;/);
+  expect(css).toMatch(/\.model-import-loading-card\s*\{[\s\S]*?display:\s*inline-flex;[\s\S]*?gap:\s*10px;[\s\S]*?border-radius:\s*12px;[\s\S]*?background:\s*var\(--glass-panel-bg\);/);
+  expect(css).toMatch(/\.model-import-spinner\s*\{[\s\S]*?animation:\s*model-import-spin 0\.8s linear infinite;/);
 });
 
 it("renders the viewport aspect ratio picker as a horizontal floating panel", () => {
