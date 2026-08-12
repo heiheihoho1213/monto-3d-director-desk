@@ -9,13 +9,17 @@ import {
   initDirectorDeskHostBridge,
 } from "./editor/io/hostBridge";
 import { ModelUploadProvider } from "./editor/io/modelUploadContext";
+import { CaptureUploadProvider } from "./editor/io/captureUploadContext";
+import { CaptureLoadingProvider } from "./editor/io/captureLoadingContext";
 import { createDirectorDeskHandle, type DirectorDeskHandle, type DirectorDeskImageDataUrl } from "./editor/io/directorDeskCaptureApi";
+import type { DirectorDeskUploadCaptures } from "./editor/io/captureUpload";
 import type { DirectorDeskUploadModel } from "./editor/loaders/localModelImport";
 import type { DirectorProject } from "./editor/schema/directorProject";
 import { useDirectorStore } from "./editor/store/directorStore";
 import { I18nProvider, useT, type DirectorDeskLang } from "./i18n";
 
 export type { DirectorDeskUploadModel } from "./editor/loaders/localModelImport";
+export type { DirectorDeskUploadCaptures } from "./editor/io/captureUpload";
 export type { DirectorDeskLang } from "./i18n";
 export { DIRECTOR_DESK_LANGS } from "./i18n";
 
@@ -39,13 +43,14 @@ export const DIRECTOR_THEME_SKY_COLORS: Record<DirectorDeskTheme, string> = {
 export const DIRECTOR_DESK_ON_CHANGE_DEBOUNCE_MS = 300;
 
 /**
- * PNG screenshot payload emitted by `onCapturesSent` and `sendCaptures`.
+ * Screenshot payload emitted by `onCapturesSent` and `sendCaptures`.
  *
- * `dataUrl` is always a PNG Data URL: `data:image/png;base64,...`
+ * `dataUrl` is a PNG Data URL (`data:image/png;base64,...`) by default, or a remote
+ * URL when `uploadCaptures` is provided.
  */
 export interface DirectorDeskCapture {
-  /** PNG Data URL — see {@link DirectorDeskImageDataUrl}. */
-  dataUrl: DirectorDeskImageDataUrl;
+  /** PNG Data URL or remote image URL — see {@link DirectorDeskImageDataUrl}. */
+  dataUrl: DirectorDeskImageDataUrl | string;
   /** Suggested download / upload file name (typically ends with `.png`). */
   fileName: string;
 }
@@ -84,7 +89,7 @@ export interface DirectorDeskProps {
   enablePostMessage?: boolean;
   onReady?: () => void;
   onClose?: () => void;
-  /** Fired when captures are sent to the host. Each `dataUrl` is a PNG base64 Data URL. */
+  /** Fired when captures are sent to the host. Each item is a PNG Data URL or remote URL. */
   onCapturesSent?: (captures: DirectorDeskCapture[]) => void;
   /** Fired (debounced) when the editable project content changes. */
   onChange?: (project: DirectorProject) => void;
@@ -95,6 +100,13 @@ export interface DirectorDeskProps {
    * instead of inlining a base64 Data URL (avoids oversized project payloads).
    */
   uploadModel?: DirectorDeskUploadModel;
+  /**
+   * Optional host batch uploader for viewport / camera captures.
+   * Pass an async function that receives PNG `File[]` and returns remote URLs in the same order.
+   * When provided, captures are uploaded immediately and stored/displayed/sent as URLs
+   * instead of base64 Data URLs.
+   */
+  uploadCaptures?: DirectorDeskUploadCaptures;
 }
 
 function cloneProject(project: DirectorProject): DirectorProject {
@@ -129,6 +141,7 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
     onCapturesSent,
     onChange,
     uploadModel,
+    uploadCaptures,
   },
   ref
 ) {
@@ -373,16 +386,20 @@ export const DirectorDesk = forwardRef<DirectorDeskHandle, DirectorDeskProps>(fu
   return (
     <I18nProvider lang={lang}>
       <ModelUploadProvider uploadModel={uploadModel ?? null}>
-        <DirectorDeskFrame
-          className={rootClassName}
-          style={style}
-          theme={theme}
-          title={title}
-          showCloseButton={showCloseButton}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          onClose={handleClose}
-        />
+        <CaptureUploadProvider uploadCaptures={uploadCaptures ?? null}>
+          <CaptureLoadingProvider>
+            <DirectorDeskFrame
+              className={rootClassName}
+              style={style}
+              theme={theme}
+              title={title}
+              showCloseButton={showCloseButton}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              onClose={handleClose}
+            />
+          </CaptureLoadingProvider>
+        </CaptureUploadProvider>
       </ModelUploadProvider>
     </I18nProvider>
   );

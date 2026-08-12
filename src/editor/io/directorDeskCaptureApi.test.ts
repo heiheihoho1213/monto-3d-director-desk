@@ -11,10 +11,12 @@ import {
   setViewportCameraSnapshotProvider,
   setViewportCaptureHandler,
 } from "./captureBridge";
+import { setCaptureUploadHandler } from "./captureUpload";
 
 beforeEach(() => {
   clearViewportCaptureHandler();
   setViewportCameraSnapshotProvider(null);
+  setCaptureUploadHandler(null);
   useDirectorStore.setState({
     ...useDirectorStore.getState(),
     ...createInitialDirectorState(),
@@ -120,4 +122,28 @@ it("matches viewport toolbar capture by creating a camera and saving captures", 
   expect(useDirectorStore.getState().project.cameras.length).toBe(beforeCount + 1);
   expect(useDirectorStore.getState().viewMode).toBe("camera");
   expect(results[0]?.dataUrl).toBe("data:image/png;base64,toolbar");
+});
+
+it("uploads captures through the host batch uploader before saving to project", async () => {
+  setViewportCaptureHandler(async () => [
+    {
+      label: "当前机位",
+      dataUrl: "data:image/png;base64,cam",
+      meta: {
+        mode: "camera" as const,
+        cameraId: "cam_1",
+        fov: 45,
+        position: [1, 2, 3] as [number, number, number],
+        target: [0, 1, 0] as [number, number, number],
+      },
+    },
+  ]);
+  setCaptureUploadHandler(async (files) => files.map((file) => `https://cdn.example.com/${file.name}`));
+
+  const results = await captureCameraShot("cam_1", { saveToProject: true });
+
+  expect(results[0]?.dataUrl).toBe("https://cdn.example.com/monto-director-desk-camera-cam_1-当前机位-1.png");
+  expect(useDirectorStore.getState().project.cameras[0]?.captures?.[0]?.dataUrl).toBe(
+    "https://cdn.example.com/monto-director-desk-camera-cam_1-当前机位-1.png"
+  );
 });

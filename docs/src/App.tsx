@@ -23,6 +23,14 @@ export async function uploadModel(file: File): Promise<string> {
   return URL.createObjectURL(file);
 }
 
+/** Playground batch uploader for captures — host should return CDN/OSS URLs. */
+export async function uploadCaptures(files: File[]): Promise<string[]> {
+  await new Promise((resolve) => {
+    window.setTimeout(resolve, 2000);
+  });
+  return files.map((file) => URL.createObjectURL(file));
+}
+
 /** Route remote http(s) images through the docs Vite CORS proxy for WebGL texture loads. */
 function toPlaygroundPanoramaUrl(url: string) {
   if (!/^https?:\/\//i.test(url)) return url;
@@ -578,6 +586,12 @@ export default function App() {
             const url = await uploadModel(file);
             console.log("uploadModel", file.name, url);
             return url;
+          }}
+          uploadCaptures={async (files) => {
+            setLastEvent(`uploadCaptures: ${files.length}`);
+            const urls = await uploadCaptures(files);
+            console.log("uploadCaptures", urls);
+            return urls;
           }}
         />
       </main>

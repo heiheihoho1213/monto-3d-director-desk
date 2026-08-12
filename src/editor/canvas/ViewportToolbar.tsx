@@ -29,7 +29,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { requestViewportCapture } from "../io/captureBridge";
+import { requestViewportCaptureWithStorage, withCaptureLoading } from "../io/captureWorkflow";
 import { useModelUpload } from "../io/modelUploadContext";
 import { readLocalModelFile } from "../loaders/localModelImport";
 import { readPanoramaFile } from "../loaders/panoramaImport";
@@ -338,18 +338,23 @@ export function ViewportToolbar({
 
   async function handleCapture(preset: "current" | "four" | "twelve") {
     try {
-      const targetCameraId =
-        viewMode === "director" ? addCameraShot(getViewportCameraSnapshot?.()) : activeCameraId;
+      await withCaptureLoading(preset, async () => {
+        const targetCameraId =
+          viewMode === "director" ? addCameraShot(getViewportCameraSnapshot?.()) : activeCameraId;
 
-      setViewMode("camera");
-      await waitForNextAnimationFrame();
+        setViewMode("camera");
+        await waitForNextAnimationFrame();
 
-      const results = await requestViewportCapture({
-        preset,
-        source: "camera-panel",
-        cameraId: targetCameraId,
+        const { storageUrls } = await requestViewportCaptureWithStorage(
+          {
+            preset,
+            source: "camera-panel",
+            cameraId: targetCameraId,
+          },
+          { manageLoading: false }
+        );
+        addCameraCaptures(targetCameraId, storageUrls);
       });
-      addCameraCaptures(targetCameraId, results.map((result) => result.dataUrl));
     } catch {
       // Keep the capsule toolbar icon-only and free of transient status text.
     }
