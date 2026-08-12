@@ -92,6 +92,7 @@ export function MyPage() {
 - `lang`：界面语言，`"zh" | "en"`，默认 `"zh"`。
 - `onChange`：工程内容变化时触发（默认防抖 300ms），便于宿主持久化。
 - `uploadModel`：可选。传入宿主侧 `export async function` 上传函数；导入 FBX/OBJ 时 `await` 其返回的 URL，写入 `project.assets[].url`。未传时仍回退为 base64 Data URL。
+- `uploadCaptures`：可选。批量上传截图；传入 `(files: File[]) => Promise<string[]>`，截图后立即上传，工程内与「发送到画布」均使用返回的远程 URL，不再写入 base64。
 - `ref`：暴露截图 imperative API（见下）。
 
 ```tsx
@@ -109,12 +110,26 @@ export async function uploadModel(file: File): Promise<string> {
 }
 ```
 
+```ts
+// host: uploadCaptures.ts
+export async function uploadCaptures(files: File[]): Promise<string[]> {
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+  const response = await fetch("/api/captures/upload", { method: "POST", body: form });
+  const data = await response.json();
+  return data.urls as string[];
+}
+```
+
 ```tsx
+import { uploadCaptures } from "./uploadCaptures";
 import { uploadModel } from "./uploadModel";
 
 <DirectorDesk
   uploadModel={uploadModel}
+  uploadCaptures={uploadCaptures}
   onChange={(project) => console.log(project.assets)}
+  onCapturesSent={(captures) => console.log(captures.map((item) => item.dataUrl))}
 />
 ```
 

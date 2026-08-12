@@ -10,6 +10,7 @@ export type {
   DirectorDeskScreenshot,
   DirectorDeskImageDataUrl,
   DirectorDeskUploadModel,
+  DirectorDeskUploadCaptures,
   DirectorDeskLang,
 } from "./DirectorDesk";
 

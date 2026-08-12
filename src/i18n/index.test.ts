@@ -18,6 +18,8 @@ describe("i18n translator", () => {
     const t = createTranslator("en");
     expect(t("toolbar.importingFile", { name: "chair.obj" })).toBe("Importing chair.obj…");
     expect(t("toolbar.importingProgress", { current: 2, total: 5 })).toBe("Importing models (2/5)…");
+    expect(t("toolbar.captureProcessingBatch", { count: 12 })).toBe("Capturing (12)…");
+    expect(t("toolbar.captureUploading")).toBe("Uploading captures…");
   });
 
   it("falls back to Chinese when a key is missing in English", () => {

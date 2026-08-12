@@ -60,6 +60,9 @@ export const enMessages = {
     importingFile: "Importing {name}…",
     importingProgress: "Importing models ({current}/{total})…",
     importingGeneric: "Importing model…",
+    captureProcessing: "Capturing…",
+    captureProcessingBatch: "Capturing ({count})…",
+    captureUploading: "Uploading captures…",
   },
   aspect: {
     auto: "Auto",
@@ -314,6 +317,7 @@ export const enMessages = {
     modelUnsupported: "Only FBX / OBJ model files are supported",
     modelReadFailed: "Failed to read model file",
     modelUploadInvalidUrl: "Model upload did not return a valid URL",
+    captureUploadInvalidUrls: "Capture upload did not return valid URLs",
     panoramaFailed: "Failed to import panorama",
   },
   viewport: {

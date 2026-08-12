@@ -1,5 +1,6 @@
 import type { CameraShotSnapshot } from "../store/directorStore";
-import { getViewportCameraSnapshotProvider, requestViewportCapture, type ViewportCapturePreset } from "./captureBridge";
+import { getViewportCameraSnapshotProvider, type ViewportCapturePreset } from "./captureBridge";
+import { requestViewportCaptureWithStorage, withCaptureLoading } from "./captureWorkflow";
 import { postDirectorDeskCapturesToHost } from "./hostBridge";
 import { buildCaptureFileName, type ScreenshotDataUrl, type ScreenshotMeta, type ScreenshotResult } from "./screenshotExport";
 import { useDirectorStore } from "../store/directorStore";
@@ -46,17 +47,26 @@ export function mapScreenshotResults(results: ScreenshotResult[]): DirectorDeskS
 async function runViewportCapture(
   preset: ViewportCapturePreset,
   source: "capture-panel" | "camera-panel",
-  options: DirectorDeskCaptureRequestOptions = {}
+  options: DirectorDeskCaptureRequestOptions = {},
+  captureOptions: { manageLoading?: boolean } = {}
 ): Promise<DirectorDeskScreenshot[]> {
   const state = useDirectorStore.getState();
   const cameraId = options.cameraId ?? (state.viewMode === "camera" ? state.project.activeCameraId : null);
 
-  const results = await requestViewportCapture({
-    preset,
-    source,
-    cameraId,
-  });
-  const screenshots = mapScreenshotResults(results);
+  const { results, storageUrls } = await requestViewportCaptureWithStorage(
+    {
+      preset,
+      source,
+      cameraId,
+    },
+    { manageLoading: captureOptions.manageLoading ?? true }
+  );
+  const screenshots = results.map((result, index) => ({
+    label: result.label,
+    dataUrl: storageUrls[index] ?? result.dataUrl,
+    fileName: buildCaptureFileName(result, index),
+    meta: result.meta,
+  }));
 
   if (options.saveToProject && cameraId) {
     state.addCameraCaptures(
@@ -125,13 +135,20 @@ export async function captureFromViewportToolbar(
     throw new Error("Unable to resolve a camera for viewport toolbar capture");
   }
 
-  state.setViewMode("camera");
-  await waitForNextAnimationFrame();
+  return withCaptureLoading(preset, async () => {
+    state.setViewMode("camera");
+    await waitForNextAnimationFrame();
 
-  return runViewportCapture(preset, "camera-panel", {
-    ...options,
-    cameraId: targetCameraId,
-    saveToProject: true,
+    return runViewportCapture(
+      preset,
+      "camera-panel",
+      {
+        ...options,
+        cameraId: targetCameraId,
+        saveToProject: true,
+      },
+      { manageLoading: false }
+    );
   });
 }
 

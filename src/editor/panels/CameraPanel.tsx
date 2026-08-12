@@ -11,6 +11,7 @@ import {
   InspectorTextField,
 } from "./InspectorControls";
 import { requestViewportCapture } from "../io/captureBridge";
+import { requestViewportCaptureWithStorage } from "../io/captureWorkflow";
 import { downloadDataUrl } from "../io/screenshotExport";
 import { postDirectorDeskCapturesToHost } from "../io/hostBridge";
 import { getDirectorObjectFocusTarget, isCameraFocusableObject } from "../schema/cameraTarget";
@@ -162,16 +163,20 @@ export function CameraPanel() {
   async function handleCameraCapture() {
     try {
       setCaptureError(null);
-      const results = await requestViewportCapture({
+      const { storageUrls } = await requestViewportCaptureWithStorage({
         preset: "current",
         source: "camera-panel",
         cameraId: currentCamera.id,
       });
-      const preview = results[0];
-      if (preview) {
-        addCameraCaptures(currentCamera.id, [preview.dataUrl]);
+      if (storageUrls.length > 0) {
+        addCameraCaptures(currentCamera.id, storageUrls);
       }
     } catch (error) {
+      if (error instanceof Error && error.message === "CAPTURE_UPLOAD_INVALID_URLS") {
+        setCaptureError(t("errors.captureUploadInvalidUrls"));
+        return;
+      }
+
       setCaptureError(error instanceof Error ? error.message : t("camera.captureFailed"));
     }
   }

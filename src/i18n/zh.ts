@@ -60,6 +60,9 @@ export const zhMessages = {
     importingFile: "正在导入 {name}…",
     importingProgress: "正在导入模型（{current}/{total}）…",
     importingGeneric: "模型导入中…",
+    captureProcessing: "正在截图…",
+    captureProcessingBatch: "正在截图（{count} 张）…",
+    captureUploading: "正在上传截图…",
   },
   aspect: {
     auto: "自动",
@@ -314,6 +317,7 @@ export const zhMessages = {
     modelUnsupported: "当前仅支持 FBX / OBJ 模型文件",
     modelReadFailed: "模型文件读取失败",
     modelUploadInvalidUrl: "模型上传未返回有效 URL",
+    captureUploadInvalidUrls: "截图上传未返回有效 URL",
     panoramaFailed: "全景图导入失败",
   },
   viewport: {

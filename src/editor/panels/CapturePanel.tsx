@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { requestViewportCapture } from "../io/captureBridge";
+import { requestViewportCaptureWithStorage } from "../io/captureWorkflow";
 import { serializeProject } from "../io/exportProjectJson";
 import { parseProject } from "../io/importProjectJson";
 import { downloadCaptureResults } from "../io/screenshotExport";
@@ -14,7 +14,7 @@ export function CapturePanel() {
 
   async function handleCapture(preset: "current" | "four" | "twelve") {
     try {
-      const results = await requestViewportCapture({
+      const { results } = await requestViewportCaptureWithStorage({
         preset,
         source: "capture-panel",
       });
