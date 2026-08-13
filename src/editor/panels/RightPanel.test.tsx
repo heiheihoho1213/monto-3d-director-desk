@@ -112,3 +112,17 @@ it("falls back to the active camera panel in camera mode when nothing is selecte
 
   expect(screen.getByText("摄像机")).toBeInTheDocument();
 });
+
+it("shows the character panel in camera mode when a character is selected", () => {
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    viewMode: "camera",
+    selectedObjectId: "char_default_a",
+    selectedObjectIds: ["char_default_a"],
+  });
+
+  render(<RightPanel />);
+
+  expect(screen.getByText("角色")).toBeInTheDocument();
+  expect(screen.queryByText("摄像机")).not.toBeInTheDocument();
+});

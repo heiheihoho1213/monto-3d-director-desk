@@ -252,7 +252,7 @@ it("stores viewport capsule screenshots in the current camera while already in c
   );
 
   useDirectorStore.getState().addCameraShot(secondCameraSnapshot);
-  useDirectorStore.getState().setViewMode("camera");
+  useDirectorStore.getState().setViewMode("camera", { cameraId: "cam_2" });
   setViewportCaptureHandler(handler);
   render(<ViewportToolbar />);
 

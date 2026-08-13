@@ -136,7 +136,7 @@ export async function captureFromViewportToolbar(
   }
 
   return withCaptureLoading(preset, async () => {
-    state.setViewMode("camera");
+    state.setViewMode("camera", { cameraId: targetCameraId });
     await waitForNextAnimationFrame();
 
     return runViewportCapture(

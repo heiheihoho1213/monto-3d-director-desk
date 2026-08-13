@@ -1357,6 +1357,19 @@
   font-weight: 600;
 }
 
+.inspector-action-button.camera-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.inspector-action-button.camera-delete-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -3365,6 +3378,10 @@
   white-space: nowrap;
   background: rgb(var(--panel-rgb) / 0.92);
   box-shadow: 0 10px 28px rgb(var(--overlay-rgb) / 0.24);
+}
+
+.role-label.is-selectable {
+  cursor: pointer;
 }
 
 .viewport-error-card {

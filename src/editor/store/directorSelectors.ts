@@ -50,6 +50,11 @@ export function selectRightPanelKind(state: DirectorState): RightPanelKind {
   if (selected?.kind === "character") return "character";
   if (selected?.kind === "prop" || selectedAsset?.sourceType === "model") return "prop";
   if (selected?.kind === "camera") return "camera";
-  if (state.viewMode === "camera") return "camera";
+
+  // Camera view with no scene selection falls back to the active shot panel.
+  if (state.viewMode === "camera") {
+    return "camera";
+  }
+
   return "scene";
 }
