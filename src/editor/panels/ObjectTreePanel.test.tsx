@@ -395,28 +395,123 @@ it("does not render a delete icon and deletes the selected object with the keybo
   expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(false);
 });
 
-it("ignores keyboard delete while in camera view mode", async () => {
+it("ignores keyboard delete for non-camera selections while in camera view mode", async () => {
   const user = userEvent.setup();
   useDirectorStore.getState().addPresetCharacter("female");
   useDirectorStore.getState().setViewMode("camera");
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    selectedObjectId: "char_preset_2",
+    selectedObjectIds: ["char_preset_2"],
+  });
   render(<ObjectTreePanel />);
 
-  await user.click(screen.getByRole("button", { name: "角色02" }));
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+
   await user.keyboard("{Delete}");
 
   expect(screen.getByRole("button", { name: "角色02" })).toBeInTheDocument();
   expect(useDirectorStore.getState().project.objects.some((item) => item.name === "角色02")).toBe(true);
+  expect(useDirectorStore.getState().selectedObjectId).toBe("char_preset_2");
 });
 
-it("switches the active camera when users select a camera row", async () => {
+it("deletes the selected camera with keyboard delete while in camera view mode", async () => {
+  const user = userEvent.setup();
+  useDirectorStore.getState().addCameraShot();
+  useDirectorStore.getState().setViewMode("camera", { cameraId: "cam_2" });
+  render(<ObjectTreePanel />);
+
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_2");
+
+  await user.keyboard("{Delete}");
+
+  expect(screen.queryByRole("button", { name: "机位02" })).not.toBeInTheDocument();
+  expect(useDirectorStore.getState().project.cameras.some((item) => item.id === "cam_2")).toBe(false);
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_1");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+});
+
+it("keeps the last remaining camera when delete is pressed in camera view", async () => {
+  const user = userEvent.setup();
+  useDirectorStore.getState().setViewMode("camera");
+  render(<ObjectTreePanel />);
+
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+  expect(useDirectorStore.getState().project.cameras).toHaveLength(1);
+
+  await user.keyboard("{Delete}");
+
+  expect(screen.getByRole("button", { name: "机位01" })).toBeInTheDocument();
+  expect(useDirectorStore.getState().project.cameras).toHaveLength(1);
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+});
+
+it("keeps the last remaining camera when delete is pressed in director view", async () => {
+  const user = userEvent.setup();
+  render(<ObjectTreePanel />);
+
+  await user.click(screen.getByRole("button", { name: "机位01" }));
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+  expect(useDirectorStore.getState().project.cameras).toHaveLength(1);
+
+  await user.keyboard("{Delete}");
+
+  expect(screen.getByRole("button", { name: "机位01" })).toBeInTheDocument();
+  expect(useDirectorStore.getState().project.cameras).toHaveLength(1);
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+});
+
+it("selects a character from the object tree in camera view without leaving camera view", async () => {
+  const user = userEvent.setup();
+  useDirectorStore.getState().setViewMode("camera");
+  render(<ObjectTreePanel />);
+
+  await user.click(screen.getByRole("button", { name: "角色01" }));
+
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("char_default_a");
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_1");
+});
+
+it("selects a camera in director view without switching to camera view", async () => {
   const user = userEvent.setup();
   useDirectorStore.getState().addCameraShot();
   render(<ObjectTreePanel />);
 
   expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_2");
+  expect(useDirectorStore.getState().viewMode).toBe("director");
 
   await user.click(screen.getByRole("button", { name: "机位01" }));
 
   expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_1");
   expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+  expect(useDirectorStore.getState().viewMode).toBe("director");
+});
+
+it("switches the active camera while staying in camera view when a camera row is selected there", async () => {
+  const user = userEvent.setup();
+  useDirectorStore.getState().addCameraShot();
+  useDirectorStore.getState().setViewMode("camera");
+  render(<ObjectTreePanel />);
+
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_1");
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+
+  await user.click(screen.getByRole("button", { name: "机位02" }));
+
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_2");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_2");
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+});
+
+it("clears camera selection when returning to director view", () => {
+  useDirectorStore.getState().setViewMode("camera");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+
+  useDirectorStore.getState().setViewMode("director");
+
+  expect(useDirectorStore.getState().selectedObjectId).toBeNull();
+  expect(useDirectorStore.getState().directorInspectorMode).toBe("scene");
 });

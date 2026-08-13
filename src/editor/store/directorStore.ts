@@ -92,7 +92,7 @@ interface DirectorInternalState {
 }
 
 export interface DirectorActions {
-  setViewMode: (mode: ViewMode) => void;
+  setViewMode: (mode: ViewMode, options?: { cameraId?: string | null }) => void;
   setTransformMode: (mode: TransformMode) => void;
   setViewportAspectRatio: (ratio: ViewportAspectRatio) => void;
   setViewportRuleOfThirdsEnabled: (enabled: boolean) => void;
@@ -1215,24 +1215,53 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
         ...state,
         panoramaPreviewVisible: !state.panoramaPreviewVisible,
       })),
-    setViewMode: (mode) =>
-      commitUiMutation((state) => ({
-        ...state,
-        viewMode: mode,
-        project: {
-          ...state.project,
-          activeCameraId:
-            mode === "camera"
-              ? state.project.activeCameraId ?? state.project.cameras[0]?.id ?? null
-              : state.project.activeCameraId,
-        },
-      })),
-    selectObject: (id) =>
+    setViewMode: (mode, options) =>
       commitUiMutation((state) => {
-        const selectedObject = state.project.objects.find((item) => item.id === id);
+        if (mode === "director") {
+          // Leaving camera view clears selection and shows scene canvas params.
+          return {
+            ...state,
+            viewMode: mode,
+            selectedObjectId: null,
+            selectedObjectIds: [],
+            selectedCrowdId: null,
+            directorInspectorMode: "scene",
+          };
+        }
+
+        // Entering camera view focuses the requested shot, otherwise the first shot.
+        const requestedCameraId = options?.cameraId;
+        const nextCameraId =
+          requestedCameraId && state.project.cameras.some((camera) => camera.id === requestedCameraId)
+            ? requestedCameraId
+            : state.project.cameras[0]?.id ?? null;
+        const cameraObjectId =
+          state.project.objects.find(
+            (item) => item.kind === "camera" && item.linkedCameraId === nextCameraId
+          )?.id ?? null;
 
         return {
           ...state,
+          viewMode: mode,
+          selectedObjectId: cameraObjectId,
+          selectedObjectIds: cameraObjectId ? [cameraObjectId] : [],
+          selectedCrowdId: null,
+          directorInspectorMode: "auto",
+          project: {
+            ...state.project,
+            activeCameraId: nextCameraId,
+          },
+        };
+      }),
+    selectObject: (id) =>
+      commitUiMutation((state) => {
+        const selectedObject = state.project.objects.find((item) => item.id === id);
+        const selectingCamera =
+          selectedObject?.kind === "camera" && Boolean(selectedObject.linkedCameraId);
+
+        return {
+          ...state,
+          // Selection never forces a view-mode switch.
           selectedObjectId: id,
           selectedObjectIds: id ? [id] : [],
           selectedCrowdId: null,
@@ -1240,7 +1269,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
           project: {
             ...state.project,
             activeCameraId:
-              selectedObject?.kind === "camera" && selectedObject.linkedCameraId
+              selectingCamera && selectedObject?.linkedCameraId
                 ? selectedObject.linkedCameraId
                 : state.project.activeCameraId,
           },
@@ -1820,6 +1849,10 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
             .filter((item) => item.kind === "camera" && item.linkedCameraId)
             .map((item) => item.linkedCameraId)
         );
+        // Always keep at least one camera shot in the project.
+        if (linkedCameraIds.size > 0 && state.project.cameras.length - linkedCameraIds.size < 1) {
+          return state;
+        }
         const nextCameras = linkedCameraIds.size
           ? state.project.cameras.filter((camera) => !linkedCameraIds.has(camera.id))
           : state.project.cameras;
@@ -1838,6 +1871,11 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
             ? nextFocusedCameras[0]?.id ?? null
             : state.project.activeCameraId;
         const nextObjects = state.project.objects.filter((item) => !selectedObjectIds.includes(item.id));
+        const nextSelectedObjectId =
+          state.viewMode === "camera" && nextActiveCameraId
+            ? nextObjects.find((item) => item.kind === "camera" && item.linkedCameraId === nextActiveCameraId)
+                ?.id ?? null
+            : null;
         const assetsById = new Map(state.project.assets.map((item) => [item.id, item]));
         const remainingAssetRefIds = new Set(
           nextObjects.map((item) => item.assetRefId).filter((assetRefId): assetRefId is string => Boolean(assetRefId))
@@ -1855,8 +1893,8 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
 
         return {
           ...state,
-          selectedObjectId: null,
-          selectedObjectIds: [],
+          selectedObjectId: nextSelectedObjectId,
+          selectedObjectIds: nextSelectedObjectId ? [nextSelectedObjectId] : [],
           selectedCrowdId: null,
           directorInspectorMode: "auto",
           project: {
@@ -1986,6 +2024,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
 
         return {
           ...state,
+          // Switching the active shot does not force a view-mode change.
           project: {
             ...state.project,
             activeCameraId: cameraId,
@@ -1993,6 +2032,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => {
           selectedObjectId,
           selectedObjectIds: selectedObjectId ? [selectedObjectId] : [],
           selectedCrowdId: null,
+          directorInspectorMode: "auto",
         };
       }),
     addCameraCaptures: (cameraId, dataUrls) =>

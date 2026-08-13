@@ -70,22 +70,48 @@ type CameraHitArea = {
 
 function ViewportObjectLabel({
   children,
+  onSelect,
   position,
 }: {
   children: ReactNode;
+  onSelect?: () => void;
   position: [number, number, number];
 }) {
   return (
     <Html
       center
       distanceFactor={ROLE_LABEL_DISTANCE_FACTOR}
-      pointerEvents="none"
+      pointerEvents={onSelect ? "auto" : "none"}
       position={position}
       sprite
       transform
       zIndexRange={[0, 1]}
     >
-      <div className="role-label">{children}</div>
+      <div
+        className={`role-label${onSelect ? " is-selectable" : ""}`}
+        role={onSelect ? "button" : undefined}
+        tabIndex={onSelect ? 0 : undefined}
+        onClick={
+          onSelect
+            ? (event) => {
+                event.stopPropagation();
+                onSelect();
+              }
+            : undefined
+        }
+        onKeyDown={
+          onSelect
+            ? (event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                event.stopPropagation();
+                onSelect();
+              }
+            : undefined
+        }
+      >
+        {children}
+      </div>
     </Html>
   );
 }
@@ -597,7 +623,12 @@ function ObjectSceneNode({
             />
           </Suspense>
           {showLabels ? (
-            <ViewportObjectLabel position={[0, characterLabelY, 0]}>{item.name}</ViewportObjectLabel>
+            <ViewportObjectLabel
+              position={[0, characterLabelY, 0]}
+              onSelect={onSelect ? () => onSelect(item) : undefined}
+            >
+              {item.name}
+            </ViewportObjectLabel>
           ) : null}
         </>
       ) : item.kind === "prop" && item.geometryType ? (
@@ -761,7 +792,12 @@ function ViewportCameraRig({
       onClick={selectCameraFromViewport}
     >
       {showLabel ? (
-        <ViewportObjectLabel position={[0, cameraLabelY, 0]}>{camera.name}</ViewportObjectLabel>
+        <ViewportObjectLabel
+          position={[0, cameraLabelY, 0]}
+          onSelect={() => selectObject(object?.id ?? null)}
+        >
+          {camera.name}
+        </ViewportObjectLabel>
       ) : null}
 
       <mesh name={`${camera.id}-hit-area`} onClick={selectCameraFromViewport} position={cameraHitArea.position}>
@@ -898,19 +934,19 @@ export function SceneRoot() {
             />
           );
         })}
-      {Array.from(new Set(objects.map((item) => item.crowdId).filter((item): item is string => typeof item === "string"))).map(
-        (crowdId) => (
-          <CrowdTransformRig
-            key={crowdId}
-            crowdId={crowdId}
-            objects={objects}
-            selected={selectedCrowdId === crowdId}
-            transformMode={transformMode}
-            transformable={!(crowdLocksById.get(crowdId) ?? false)}
-            translationSnap={translationSnap}
-          />
-        )
-      )}
+      {Array.from(
+        new Set(objects.map((item) => item.crowdId).filter((item): item is string => typeof item === "string"))
+      ).map((crowdId) => (
+        <CrowdTransformRig
+          key={crowdId}
+          crowdId={crowdId}
+          objects={objects}
+          selected={selectedCrowdId === crowdId}
+          transformMode={transformMode}
+          transformable={!(crowdLocksById.get(crowdId) ?? false)}
+          translationSnap={translationSnap}
+        />
+      ))}
       {viewMode === "director"
         ? cameras
             .map((camera) => ({ camera, object: cameraObjectsByCameraId.get(camera.id) }))

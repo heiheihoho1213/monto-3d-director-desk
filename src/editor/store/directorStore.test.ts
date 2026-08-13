@@ -143,6 +143,82 @@ it("routes the right panel by object type and view mode", () => {
   expect(selectRightPanelKind({ ...state, viewMode: "camera", selectedObjectId: null, selectedObjectIds: [] })).toBe(
     "camera"
   );
+  expect(
+    selectRightPanelKind({
+      ...state,
+      viewMode: "camera",
+      selectedObjectId: characterId,
+      selectedObjectIds: [characterId],
+    })
+  ).toBe("character");
+});
+
+it("clears scene selection when entering camera view and focuses the first camera", () => {
+  const characterId = useDirectorStore.getState().project.objects.find((item) => item.kind === "character")?.id;
+  expect(characterId).toBeTruthy();
+
+  useDirectorStore.getState().addCameraShot();
+  useDirectorStore.getState().setActiveCamera("cam_2");
+
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    viewMode: "director",
+    selectedObjectId: characterId!,
+    selectedObjectIds: [characterId!],
+  });
+
+  useDirectorStore.getState().setViewMode("camera");
+
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_1");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual(["cam_object_1"]);
+  expect(useDirectorStore.getState().selectedCrowdId).toBeNull();
+});
+
+it("keeps camera view when a character is selected from camera view", () => {
+  const characterId = useDirectorStore.getState().project.objects.find((item) => item.kind === "character")?.id;
+  expect(characterId).toBeTruthy();
+
+  useDirectorStore.getState().setViewMode("camera");
+  useDirectorStore.getState().selectObject(characterId!);
+
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+  expect(useDirectorStore.getState().selectedObjectId).toBe(characterId);
+  expect(selectRightPanelKind(useDirectorStore.getState())).toBe("character");
+});
+
+it("keeps director view when a camera is selected and returns to scene inspector when leaving camera view", () => {
+  useDirectorStore.getState().selectObject("cam_object_1");
+
+  expect(useDirectorStore.getState().viewMode).toBe("director");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_1");
+  expect(selectRightPanelKind(useDirectorStore.getState())).toBe("camera");
+
+  useDirectorStore.getState().setViewMode("camera");
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
+  expect(selectRightPanelKind(useDirectorStore.getState())).toBe("camera");
+
+  useDirectorStore.getState().setViewMode("director");
+
+  expect(useDirectorStore.getState().viewMode).toBe("director");
+  expect(useDirectorStore.getState().selectedObjectId).toBeNull();
+  expect(useDirectorStore.getState().selectedObjectIds).toEqual([]);
+  expect(useDirectorStore.getState().directorInspectorMode).toBe("scene");
+  expect(selectRightPanelKind(useDirectorStore.getState())).toBe("scene");
+});
+
+it("keeps the current view mode when setActiveCamera updates the active shot", () => {
+  useDirectorStore.getState().addCameraShot();
+  expect(useDirectorStore.getState().viewMode).toBe("director");
+
+  useDirectorStore.getState().setActiveCamera("cam_2");
+
+  expect(useDirectorStore.getState().viewMode).toBe("director");
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_2");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_2");
 });
 
 it("routes a selected crowd group to the role panel", () => {
@@ -281,6 +357,20 @@ it("deletes the selected list object and linked camera data", () => {
   expect(state.project.objects.some((item) => item.id === "cam_object_2")).toBe(false);
   expect(state.project.cameras.some((item) => item.id === "cam_2")).toBe(false);
   expect(state.project.activeCameraId).toBe("cam_1");
+});
+
+it("refuses to delete the last remaining camera", () => {
+  useDirectorStore.setState(createInitialDirectorState());
+  useDirectorStore.getState().selectObject("cam_object_1");
+
+  useDirectorStore.getState().deleteSelectedObject();
+
+  const state = useDirectorStore.getState();
+
+  expect(state.project.cameras).toHaveLength(1);
+  expect(state.project.cameras[0]?.id).toBe("cam_1");
+  expect(state.project.objects.some((item) => item.id === "cam_object_1")).toBe(true);
+  expect(state.selectedObjectId).toBe("cam_object_1");
 });
 
 it("supports multi-selecting objects and deleting the selected set", () => {

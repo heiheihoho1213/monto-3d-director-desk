@@ -50,6 +50,13 @@ export function CameraPanel() {
   const setActiveCamera = useDirectorStore((state) => state.setActiveCamera);
   const addCameraCaptures = useDirectorStore((state) => state.addCameraCaptures);
   const updateCamera = useDirectorStore((state) => state.updateCamera);
+  const deleteSelectedObject = useDirectorStore((state) => state.deleteSelectedObject);
+
+  const linkedCameraObjectId = useMemo(() => {
+    if (!camera) return null;
+    return objects.find((item) => item.kind === "camera" && item.linkedCameraId === camera.id)?.id ?? null;
+  }, [camera, objects]);
+  const canDeleteCamera = cameras.length > 1;
 
   if (!camera) return null;
   const currentCamera = camera;
@@ -236,6 +243,22 @@ export function CameraPanel() {
 
   function closeViewer() {
     setViewerCapture(null);
+  }
+
+  function handleDeleteCamera() {
+    if (!canDeleteCamera || !linkedCameraObjectId) return;
+
+    const state = useDirectorStore.getState();
+    if (state.selectedObjectId !== linkedCameraObjectId) {
+      useDirectorStore.setState({
+        ...state,
+        selectedObjectId: linkedCameraObjectId,
+        selectedObjectIds: [linkedCameraObjectId],
+        selectedCrowdId: null,
+      });
+    }
+
+    deleteSelectedObject();
   }
 
   function handleTargetSelection(value: string) {
@@ -624,6 +647,16 @@ export function CameraPanel() {
             value={currentCamera.fov}
             onValueChange={(value) => updateCamera(currentCamera.id, { fov: Number(value) })}
           />
+          <button
+            className="inspector-action-button camera-delete-button"
+            type="button"
+            disabled={!canDeleteCamera}
+            aria-label={t("camera.deleteAria", { name: currentCamera.name })}
+            onClick={handleDeleteCamera}
+          >
+            <Trash2 aria-hidden="true" size={14} strokeWidth={1.9} />
+            <span>{t("camera.delete")}</span>
+          </button>
           <InspectorSection title={t("camera.captures")} className="camera-capture-section">
             <button
               className="camera-capture-current-button"

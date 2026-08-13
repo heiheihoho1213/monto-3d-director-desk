@@ -100,6 +100,23 @@ it("renders the approved camera panel fields", () => {
   expect(screen.getByLabelText("注视目标模式")).toBeInTheDocument();
   expect(screen.getByLabelText("注视坐标 X")).toBeInTheDocument();
   expect(screen.getByLabelText("机位 FOV")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "删除当前机位 机位01" })).toBeDisabled();
+});
+
+it("deletes the active camera from the properties panel when more than one camera exists", async () => {
+  const user = userEvent.setup();
+  useDirectorStore.getState().addCameraShot();
+  useDirectorStore.getState().setViewMode("camera", { cameraId: "cam_2" });
+  render(<CameraPanel />);
+
+  const deleteButton = screen.getByRole("button", { name: "删除当前机位 机位02" });
+  expect(deleteButton).toBeEnabled();
+
+  await user.click(deleteButton);
+
+  expect(useDirectorStore.getState().project.cameras.some((item) => item.id === "cam_2")).toBe(false);
+  expect(useDirectorStore.getState().project.activeCameraId).toBe("cam_1");
+  expect(useDirectorStore.getState().selectedObjectId).toBe("cam_object_1");
 });
 
 it("uses the provided right inspector layout for camera properties", () => {

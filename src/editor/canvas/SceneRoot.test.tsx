@@ -211,7 +211,7 @@ it("renders role labels as centered 3D billboards that scale with viewport dista
   expect(label).toHaveAttribute("data-center", "true");
   expect(label).toHaveAttribute("data-transform", "true");
   expect(label).toHaveAttribute("data-sprite", "true");
-  expect(label).toHaveAttribute("data-pointer-events", "none");
+  expect(label).toHaveAttribute("data-pointer-events", "auto");
   expect(label).toHaveAttribute("data-distance-factor", "3");
   expect(label).toHaveAttribute("data-z-index-range", "[0,1]");
 });
@@ -252,7 +252,7 @@ it("renders viewport camera labels with the same 3D label behavior as role label
   expect(label).toHaveAttribute("data-center", "true");
   expect(label).toHaveAttribute("data-transform", "true");
   expect(label).toHaveAttribute("data-sprite", "true");
-  expect(label).toHaveAttribute("data-pointer-events", "none");
+  expect(label).toHaveAttribute("data-pointer-events", "auto");
   expect(label).toHaveAttribute("data-distance-factor", "3");
   expect(label).toHaveAttribute("data-z-index-range", "[0,1]");
 });
@@ -507,11 +507,12 @@ it("shows transform controls around the selected character in the active tool mo
   expect(screen.getByTestId("transform-controls")).toHaveAttribute("data-translation-snap", "null");
 });
 
-it("shows transform controls around selected models while in camera view", () => {
+it("keeps transform controls for scene models while in camera view", () => {
   useDirectorStore.setState({
     ...useDirectorStore.getState(),
     viewMode: "camera",
     selectedObjectId: "char_default_a",
+    selectedObjectIds: ["char_default_a"],
     transformMode: "scale",
   });
 
@@ -519,7 +520,22 @@ it("shows transform controls around selected models while in camera view", () =>
 
   expect(screen.getByTestId("transform-controls")).toHaveAttribute("data-mode", "scale");
   expect(screen.getByTestId("transform-controls")).toHaveAttribute("data-has-object", "true");
-  expect(screen.getByTestId("transform-controls")).toHaveAttribute("data-translation-snap", "null");
+});
+
+it("selects characters from viewport clicks while in camera view", () => {
+  useDirectorStore.setState({
+    ...useDirectorStore.getState(),
+    viewMode: "camera",
+    selectedObjectId: null,
+    selectedObjectIds: [],
+  });
+
+  render(<SceneRoot />);
+
+  fireEvent.click(screen.getAllByTestId("mock-character-model")[0]!);
+
+  expect(useDirectorStore.getState().selectedObjectId).toBe("char_default_a");
+  expect(useDirectorStore.getState().viewMode).toBe("camera");
 });
 
 it("selects the whole crowd group and shows one transform control when users click a crowd member", () => {

@@ -342,7 +342,7 @@ export function ViewportToolbar({
         const targetCameraId =
           viewMode === "director" ? addCameraShot(getViewportCameraSnapshot?.()) : activeCameraId;
 
-        setViewMode("camera");
+        setViewMode("camera", { cameraId: targetCameraId });
         await waitForNextAnimationFrame();
 
         const { storageUrls } = await requestViewportCaptureWithStorage(

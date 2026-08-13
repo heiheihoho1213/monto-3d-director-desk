@@ -55,13 +55,14 @@ export function ObjectTreePanel() {
     () => resolveSelectedObjectIds({ selectedObjectId, selectedObjectIds, project: { objects } }),
     [objects, selectedObjectId, selectedObjectIds]
   );
+  const viewMode = useDirectorStore((state) => state.viewMode);
   const selectObject = useDirectorStore((state) => state.selectObject);
   const selectCrowd = useDirectorStore((state) => state.selectCrowd);
   const toggleObjectSelection = useDirectorStore((state) => state.toggleObjectSelection);
-  const setActiveCamera = useDirectorStore((state) => state.setActiveCamera);
   const toggleObjectVisible = useDirectorStore((state) => state.toggleObjectVisible);
   const toggleObjectLocked = useDirectorStore((state) => state.toggleObjectLocked);
   const deleteSelectedObject = useDirectorStore((state) => state.deleteSelectedObject);
+  const canEditSceneObjects = viewMode === "director";
 
   const groupLabels = useMemo(
     () => [
@@ -80,8 +81,27 @@ export function ObjectTreePanel() {
       if (event.key !== "Delete" && event.key !== "Backspace") return;
       if (isEditableKeyboardTarget(event.target)) return;
       const state = useDirectorStore.getState();
-      if (state.viewMode !== "director") return;
-      if (!state.selectedObjectId && state.selectedObjectIds.length === 0) return;
+      const selectedIds =
+        state.selectedObjectIds.length > 0
+          ? state.selectedObjectIds
+          : state.selectedObjectId
+            ? [state.selectedObjectId]
+            : [];
+      if (!selectedIds.length) return;
+
+      const selectedObjects = state.project.objects.filter((item) => selectedIds.includes(item.id));
+      if (!selectedObjects.length) return;
+
+      if (state.viewMode === "camera") {
+        if (selectedObjects.some((item) => item.kind !== "camera")) return;
+      } else if (state.viewMode !== "director") {
+        return;
+      }
+
+      const deletingCameraCount = selectedObjects.filter(
+        (item) => item.kind === "camera" && item.linkedCameraId
+      ).length;
+      if (deletingCameraCount > 0 && state.project.cameras.length - deletingCameraCount < 1) return;
 
       event.preventDefault();
       deleteSelectedObject();
@@ -209,10 +229,11 @@ export function ObjectTreePanel() {
   const hasEmptySearchResult = query.trim().length > 0 && filteredGroups.length === 0;
 
   function selectTreeItem(item: SceneTreeItem, event: MouseEvent<HTMLElement>) {
+    // Both view modes select in place; view switches only via the top toggle.
     if (item.crowdId) {
       const selectedIds = getSelectedIds();
 
-      if (event.shiftKey) {
+      if (canEditSceneObjects && event.shiftKey) {
         const allSelected = item.objectIds.every((id) => selectedIds.includes(id));
 
         if (allSelected) {
@@ -239,7 +260,7 @@ export function ObjectTreePanel() {
     if (item.objectIds.length > 1) {
       const selectedIds = getSelectedIds();
 
-      if (event.shiftKey) {
+      if (canEditSceneObjects && event.shiftKey) {
         const allSelected = item.objectIds.every((id) => selectedIds.includes(id));
 
         if (allSelected) {
@@ -265,15 +286,11 @@ export function ObjectTreePanel() {
       return;
     }
 
-    if (event.shiftKey) {
+    if (canEditSceneObjects && event.shiftKey) {
       toggleObjectSelection(item.id);
       return;
     }
 
-    if (item.object?.kind === "camera" && item.object.linkedCameraId) {
-      setActiveCamera(item.object.linkedCameraId);
-      return;
-    }
     selectObject(item.id);
   }
 
@@ -383,7 +400,11 @@ export function ObjectTreePanel() {
                             <button
                               className="object-flag-button object-icon-flag-button"
                               type="button"
-                              aria-label={t("objectTree.lock", { name: item.name })}
+                              aria-label={
+                                item.object.locked
+                                  ? t("objectTree.unlock", { name: item.name })
+                                  : t("objectTree.lock", { name: item.name })
+                              }
                               onClick={(event) => {
                                 event.stopPropagation();
                                 toggleObjectLocked(item.id);
